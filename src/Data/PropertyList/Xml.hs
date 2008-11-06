@@ -61,7 +61,7 @@ plistToPlistItem = $(fold ''Plist)
         (\attr -> EightOf9)
         (\attr -> NineOf9 )
 
-plistItemToPlist attr = $(fold ''OneOf9)
+plistItemToPlist = $(fold ''OneOf9)
         (PlistArray    attr)
         (PlistData     attr)
         (PlistDate     attr)
@@ -71,3 +71,4 @@ plistItemToPlist attr = $(fold ''OneOf9)
         (PlistAString  attr)
         (PlistTrue     attr)
         (PlistFalse    attr)
+        where attr = fromAttrs []

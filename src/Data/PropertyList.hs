@@ -34,143 +34,124 @@ writePropertyListToFile file plist = do
 
 data PropertyList a
         = PLArray [PropertyList a]
-        | PLDict  (M.Map String (PropertyList a))
-        
-        | PLBool Bool
         | PLData ByteString
         | PLDate UTCTime
-        | PLNum Integer
+        | PLDict  (M.Map String (PropertyList a))
         | PLReal Double
+        | PLInt Integer
         | PLString String
+        | PLBool Bool
         
         | PLVar a
         deriving (Eq, Ord, Show, Read)
 
 instance Functor PropertyList where
-        fmap f = substPropertyList (PLVar . f)
+        fmap f x = x >>= (return . f)
 
 instance Monad PropertyList where
         return = PLVar
-        (>>=) = flip substPropertyList
-
-substPropertyList :: (a -> PropertyList b)
-                     -> PropertyList a
-                     -> PropertyList b
-substPropertyList plVar = foldPropertyList
-        PLArray
-        PLDict
-        PLBool
-        PLData
-        PLDate
-        PLNum
-        PLReal
-        PLString
-        plVar
+        x >>= f = foldPropertyList
+                PLArray
+                PLData
+                PLDate
+                PLDict
+                PLReal
+                PLInt
+                PLString
+                PLBool
+                f x
 
 -- TODO: if possible, make 'fold' in th-utils detect the Functor instances for
 -- [] and Map k and automagically generate the call to fmap here
 foldPropertyList :: ([a] -> a)
-                 -> (M.Map String a -> a)
-                 -> (Bool -> a)
                  -> (ByteString -> a)
                  -> (UTCTime -> a)
-                 -> (Integer -> a)
+                 -> (M.Map String a -> a)
                  -> (Double -> a)
+                 -> (Integer -> a)
                  -> (String -> a)
+                 -> (Bool -> a)
                  -> (t -> a)
                  -> PropertyList t -> a
-foldPropertyList foldList foldMap a b c d e f g = go
+foldPropertyList foldList a b foldMap c d e f g = foldIt
         where
-                go = $(fold ''PropertyList) foldArray foldDict a b c d e f g
+                foldIt = $(fold ''PropertyList) foldArray a b foldDict c d e f g
                 
-                foldArray branches = foldList (fmap go branches)
-                foldDict dict = foldMap (fmap go dict)
+                foldArray branches = foldList (fmap foldIt branches)
+                foldDict dict = foldMap (fmap foldIt dict)
 
 data UnparsedPlistItem
         = UnparsedData String
         | UnparsedDate String
-        | UnparsedInteger String
+        | UnparsedInt  String
         | UnparsedReal String
         deriving (Eq, Ord, Show, Read)
 
 unparsedPlistItemToPlistItem :: UnparsedPlistItem -> PlistItem
 unparsedPlistItemToPlistItem = $(fold ''UnparsedPlistItem)
-        (TwoOf9 . Data)
-        (ThreeOf9 . Date)
-        (SixOf9 . AInteger)
-        (FiveOf9 . AReal)
+        (TwoOf9   . Data    )
+        (ThreeOf9 . Date    )
+        (SixOf9   . AInteger)
+        (FiveOf9  . AReal   )
 
+-- run an incremental parser - a function which takes
+-- a token type and returns either a subterm (possibly still
+-- containing unparsed tokens) or an unparsed token (possibly
+-- a new token, maybe even of a new type).  This interpretation
+-- of the action of this function is based on a term-algebra
+-- view of the monad in question.
+parseM :: Monad m => (a -> Either (m a) b) -> m a -> m b
+parseM f = parse
+        where parse input = do
+                token <- input
+                either parse return (f token)
 
-tryRead :: Read a => (a -> b) -> (String -> b) -> String -> b
-tryRead onGood onBad str =
-        case reads str of
-                ((result, ""):_) -> onGood result
-                _ -> onBad str
+plistToPropertyList :: Plist -> PropertyList UnparsedPlistItem
+plistToPropertyList = parseM parsePlistItem . return . plistToPlistItem
 
+plistItemToPropertyList :: PlistItem -> PropertyList UnparsedPlistItem
+plistItemToPropertyList = plistToPropertyList . plistItemToPlist
+
+parsePlistItem :: PlistItem -> Either (PropertyList PlistItem) UnparsedPlistItem
+parsePlistItem item = case item of
+        OneOf9   (Array x   )   -> accept PLArray (map return x)
+        TwoOf9   (Data x    )   -> case decode x of 
+                Just d                  -> accept PLData (pack d)
+                Nothing                 -> reject UnparsedData x
+        ThreeOf9 (Date x    )   -> case parseTime defaultTimeLocale dateFormat x of
+                Just t                  -> accept PLDate t
+                Nothing                 -> reject UnparsedDate x
+        FourOf9  (Dict x    )   -> accept PLDict (M.fromList [ (k, return v) | Dict_ (Key k) v <- x])
+        FiveOf9  (AReal x   )   -> tryRead PLReal UnparsedReal x
+        SixOf9   (AInteger x)   -> tryRead PLInt  UnparsedInt x
+        SevenOf9 (AString  x)   -> accept PLString x
+        EightOf9 (X.True    )   -> accept PLBool P.True
+        NineOf9  (X.False   )   -> accept PLBool P.False
+        
+        where
+                accept con = Left  . con
+                reject con = Right . con
+                
+                tryRead onGood onBad str =
+                        case reads str of
+                                ((result, ""):_) -> accept onGood result
+                                _                -> reject onBad  str
+                       
+               
 dateFormat :: String
 dateFormat = "%FT%TZ"
 
-plistToPropertyList :: Plist -> PropertyList UnparsedPlistItem
-plistToPropertyList = plistItemToPropertyList . plistToPlistItem
-
-plistItemToPropertyList :: PlistItem -> PropertyList UnparsedPlistItem
-plistItemToPropertyList = $(fold ''OneOf9) 
-        arrayToPLArray
-        dataToPLData
-        dateToPLDate
-        dictToPLDict
-        realToPLReal
-        integerToPLNum
-        stringToPLString
-        trueToPLBool
-        falseToPLBool
-        
-        where
-                arrayToPLArray   (Array x) 
-                        = PLArray  (map plistItemToPropertyList x)
-                dataToPLData     (Data x) 
-                        = case decode x of 
-                                Just d -> PLData (pack d)
-                                Nothing -> PLVar (UnparsedData x)
-                dateToPLDate     (Date x)
-                        = case parseTime defaultTimeLocale dateFormat x of
-                                Just t -> PLDate t
-                                Nothing -> PLVar (UnparsedDate x)
-                dictToPLDict     (Dict x)
-                        = PLDict (M.fromList [ (k, plistItemToPropertyList v) | Dict_ (Key k) v <- x])
-                realToPLReal     (AReal x) 
-                        = tryRead PLReal (PLVar . UnparsedReal) x
-                integerToPLNum   (AInteger x) 
-                        = tryRead PLNum (PLVar . UnparsedInteger) x
-                stringToPLString (AString x) 
-                        = PLString x
-                trueToPLBool     x = PLBool P.True
-                falseToPLBool    x = PLBool P.False
-
 propertyListToPlist :: (a -> PlistItem) -> PropertyList a -> Plist
-propertyListToPlist fromOther = plistItemToPlist (fromAttrs []) . propertyListToPlistItem fromOther
+propertyListToPlist fromOther = plistItemToPlist . propertyListToPlistItem fromOther
 
 propertyListToPlistItem :: (a -> PlistItem) -> PropertyList a -> PlistItem
 propertyListToPlistItem fromOther = foldPropertyList
-        fromPLArray
-        fromPLDict
-        fromPLBool
-        fromPLData
-        fromPLDate
-        fromPLNum
-        fromPLReal
-        fromPLString
-        fromOther
-
-        where
-                fromPLArray  x = OneOf9 (Array x)
-                fromPLData   x = TwoOf9 (Data (encode (unpack x)))
-                fromPLDate   x = ThreeOf9 (Date (formatTime defaultTimeLocale dateFormat x))
-                fromPLDict   x = FourOf9 (Dict [Dict_ (Key k) v | (k,v) <- M.toList x])
-                fromPLReal   x = FiveOf9 (AReal (show x))
-                fromPLNum    x = SixOf9 (AInteger (show x))
-                fromPLString x = SevenOf9 (AString x)
-                fromPLBool   P.True 
-                               = EightOf9 X.True
-                fromPLBool   P.False
-                               = NineOf9 X.False
+          (\x -> OneOf9 (Array x)
+        ) (\x -> TwoOf9 (Data (encode (unpack x)))
+        ) (\x -> ThreeOf9 (Date (formatTime defaultTimeLocale dateFormat x))
+        ) (\x -> FourOf9 (Dict [Dict_ (Key k) v | (k,v) <- M.toList x])
+        ) (\x -> FiveOf9 (AReal (show x))
+        ) (\x -> SixOf9 (AInteger (show x))
+        ) (\x -> SevenOf9 (AString x)
+        ) (\x -> if x then EightOf9 X.True else NineOf9 X.False
+        ) fromOther
