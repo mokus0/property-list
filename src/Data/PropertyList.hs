@@ -100,14 +100,13 @@ unparsedPlistItemToPlistItem = $(fold ''UnparsedPlistItem)
 -- a new token, maybe even of a new type).  This interpretation
 -- of the action of this function is based on a term-algebra
 -- view of the monad in question.
-parseM :: Monad m => (a -> Either (m a) b) -> m a -> m b
-parseM f = parse
-        where parse input = do
-                token <- input
-                either parse return (f token)
+parseT :: Monad t => (a -> Either (t a) b) -> a -> t b
+parseT f = parse
+        where parse token =
+                either (>>= parse) return (f token)
 
 plistToPropertyList :: Plist -> PropertyList UnparsedPlistItem
-plistToPropertyList = parseM parsePlistItem . return . plistToPlistItem
+plistToPropertyList = parseT parsePlistItem . plistToPlistItem
 
 plistItemToPropertyList :: PlistItem -> PropertyList UnparsedPlistItem
 plistItemToPropertyList = plistToPropertyList . plistItemToPlist
