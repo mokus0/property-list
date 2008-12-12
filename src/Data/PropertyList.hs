@@ -128,9 +128,13 @@ parsePlistItem item = case item of
         NineOf9  (X.False   )   -> accept PLBool P.False
         
         where
+                accept :: (a -> b) -> a -> Either b c
                 accept con = Left  . con
+                
+                reject :: (a -> c) -> a -> Either b c
                 reject con = Right . con
                 
+                tryRead :: Read a => (a -> b) -> (String -> c) -> String -> Either b c
                 tryRead onGood onBad str =
                         case reads str of
                                 ((result, ""):_) -> accept onGood result
