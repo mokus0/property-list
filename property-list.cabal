@@ -14,4 +14,6 @@ Library
   hs-source-dirs:       src
   exposed-modules:      Data.PropertyList
   other-modules:        Data.PropertyList.Xml
-  build-depends:        base >= 3, bytestring, containers, HaXml, time
+                        Data.PropertyList.Xml.Dtd
+  build-depends:        base >= 3, bytestring, containers, 
+                        dataenc, HaXml, old-locale, pretty, time, th-utils
