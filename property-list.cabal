@@ -5,15 +5,24 @@ stability:              experimental
 cabal-version:          >= 1.2
 build-type:             Simple
 
-author:                 Cook, J. MR  SSD, Inc. <your email here>
-maintainer:             Cook, J. MR  SSD, Inc. <your email here>
+author:                 James Cook <james.cook@usma.edu>
+maintainer:             James Cook <james.cook@usma.edu>
+homepage:               http://code.haskell.org/~mokus/property-list
 
-description:            I'm too lame to describe my project
+synopsis:               XML property list parser
+description:            Parser for Apple's XML property list 1.0 format.
 
 Library
   hs-source-dirs:       src
   exposed-modules:      Data.PropertyList
   other-modules:        Data.PropertyList.Xml
                         Data.PropertyList.Xml.Dtd
-  build-depends:        base >= 3, bytestring, containers, 
-                        dataenc, HaXml, old-locale, pretty, time, th-fold
+  build-depends:        base >= 3,
+                        bytestring,
+                        containers, 
+                        dataenc,
+                        HaXml,
+                        old-locale,
+                        pretty,
+                        time,
+                        th-fold
