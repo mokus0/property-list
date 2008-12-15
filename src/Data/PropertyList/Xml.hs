@@ -19,7 +19,7 @@ import Text.PrettyPrint.HughesPJ (render)
 import Text.XML.HaXml.Pretty   (document)
 import Text.XML.HaXml.Types
 
-import Util.TH.Fold
+import Language.Haskell.TH.Fold
 
 type PlistItem = OneOf9 Array Data Date Dict AReal AInteger AString X.True X.False
 

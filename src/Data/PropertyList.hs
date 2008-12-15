@@ -19,7 +19,7 @@ import System.Locale
 import Codec.Binary.Base64 as B64
 
 import Text.XML.HaXml.OneOfN
-import Util.TH.Fold
+import Language.Haskell.TH.Fold
 
 import Text.XML.HaXml.XmlContent
 
