@@ -9,6 +9,7 @@ author:                 James Cook <james.cook@usma.edu>
 maintainer:             James Cook <james.cook@usma.edu>
 homepage:               http://code.haskell.org/~mokus/property-list
 
+category:               Data, Parsing
 synopsis:               XML property list parser
 description:            Parser for Apple's XML property list 1.0 format.
 
