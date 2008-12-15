@@ -16,4 +16,4 @@ Library
   other-modules:        Data.PropertyList.Xml
                         Data.PropertyList.Xml.Dtd
   build-depends:        base >= 3, bytestring, containers, 
-                        dataenc, HaXml, old-locale, pretty, time, th-utils
+                        dataenc, HaXml, old-locale, pretty, time, th-fold
