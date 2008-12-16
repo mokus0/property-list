@@ -35,13 +35,6 @@ parseT f = parse
         where parse token =
                 either (>>= parse) return (f token)
 
-data UnparsedPlistItem
-        = UnparsedData String
-        | UnparsedDate String
-        | UnparsedInt  String
-        | UnparsedReal String
-        deriving (Eq, Ord, Show, Read)
-
 unparsedPlistItemToPlistItem :: UnparsedPlistItem -> PlistItem
 unparsedPlistItemToPlistItem = $(fold ''UnparsedPlistItem)
         (TwoOf9   . Data    )
@@ -49,13 +42,13 @@ unparsedPlistItemToPlistItem = $(fold ''UnparsedPlistItem)
         (SixOf9   . AInteger)
         (FiveOf9  . AReal   )
 
-plistToPropertyList :: Plist -> PropertyList UnparsedPlistItem
+plistToPropertyList :: Plist -> PropertyList
 plistToPropertyList = parseT parsePlistItem . plistToPlistItem
 
-plistItemToPropertyList :: PlistItem -> PropertyList UnparsedPlistItem
+plistItemToPropertyList :: PlistItem -> PropertyList
 plistItemToPropertyList = plistToPropertyList . plistItemToPlist
 
-parsePlistItem :: PlistItem -> Either (PropertyList PlistItem) UnparsedPlistItem
+parsePlistItem :: PlistItem -> Either (PropertyList_ PlistItem) UnparsedPlistItem
 parsePlistItem item = case item of
         OneOf9   (Array x   )   -> accept PLArray (map return x)
         TwoOf9   (Data x    )   -> case decode x of 
@@ -88,10 +81,10 @@ parsePlistItem item = case item of
 dateFormat :: String
 dateFormat = "%FT%TZ"
 
-propertyListToPlist :: (a -> PlistItem) -> PropertyList a -> Plist
+propertyListToPlist :: (a -> PlistItem) -> PropertyList_ a -> Plist
 propertyListToPlist fromOther = plistItemToPlist . propertyListToPlistItem fromOther
 
-propertyListToPlistItem :: (a -> PlistItem) -> PropertyList a -> PlistItem
+propertyListToPlistItem :: (a -> PlistItem) -> PropertyList_ a -> PlistItem
 propertyListToPlistItem fromOther = foldPropertyList
           (\x -> OneOf9 (Array x)
         ) (\x -> TwoOf9 (Data (encode (unpack x)))

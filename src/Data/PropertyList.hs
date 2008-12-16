@@ -4,7 +4,8 @@
  -}
 
 module Data.PropertyList
-    ( PropertyList(..)
+    ( PropertyList
+    , PropertyList_(..)
     , UnparsedPlistItem(..)
     , readPropertyListFromFile
     , writePropertyListToFile
@@ -20,11 +21,11 @@ import Data.PropertyList.Xml
 import Data.PropertyList.GetStuff
 import Data.PropertyList.SetStuff
 
-readPropertyListFromFile :: FilePath -> IO (Either String (PropertyList UnparsedPlistItem))
+readPropertyListFromFile :: FilePath -> IO (Either String PropertyList)
 readPropertyListFromFile file = do
         x <- readPlistFromFile file
         return (fmap plistToPropertyList x)
 
-writePropertyListToFile :: FilePath -> PropertyList UnparsedPlistItem -> IO ()
+writePropertyListToFile :: FilePath -> PropertyList -> IO ()
 writePropertyListToFile file plist = do
         writePlistToFile file (propertyListToPlist unparsedPlistItemToPlistItem plist)

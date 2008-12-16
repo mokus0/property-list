@@ -14,11 +14,13 @@ import qualified Data.Map as M
 import Data.ByteString as B hiding (map)
 import Data.Time
 
-data PropertyList a
-        = PLArray [PropertyList a]
+type PropertyList = PropertyList_ UnparsedPlistItem
+
+data PropertyList_ a
+        = PLArray [PropertyList_ a]
         | PLData ByteString
         | PLDate UTCTime
-        | PLDict  (M.Map String (PropertyList a))
+        | PLDict  (M.Map String (PropertyList_ a))
         | PLReal Double
         | PLInt Integer
         | PLString String
@@ -27,10 +29,17 @@ data PropertyList a
         | PLVar a
         deriving (Eq, Ord, Show, Read)
 
-instance Functor PropertyList where
+data UnparsedPlistItem
+        = UnparsedData String
+        | UnparsedDate String
+        | UnparsedInt  String
+        | UnparsedReal String
+        deriving (Eq, Ord, Show, Read)
+
+instance Functor PropertyList_ where
         fmap f x = x >>= (return . f)
 
-instance Monad PropertyList where
+instance Monad PropertyList_ where
         return = PLVar
         x >>= f = foldPropertyList
                 PLArray
@@ -54,10 +63,10 @@ foldPropertyList :: ([a] -> a)
                  -> (String -> a)
                  -> (Bool -> a)
                  -> (t -> a)
-                 -> PropertyList t -> a
+                 -> PropertyList_ t -> a
 foldPropertyList foldList a b foldMap c d e f g = foldIt
         where
-                foldIt = $(fold ''PropertyList) foldArray a b foldDict c d e f g
+                foldIt = $(fold ''PropertyList_) foldArray a b foldDict c d e f g
                 
                 foldArray branches = foldList (fmap foldIt branches)
                 foldDict dict = foldMap (fmap foldIt dict)
