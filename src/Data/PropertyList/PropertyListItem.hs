@@ -124,8 +124,10 @@ alterItemAtKeyPath ::
     (PropertyListItem i, PropertyListItem i')
     => [String] -> (Maybe i -> Maybe i')
     -> Maybe PropertyList -> Maybe PropertyList
-alterItemAtKeyPath [] f = alterPropertyList f
-alterItemAtKeyPath (k:ks) f = fst . tryAlterDictionaryEntry k (alterItemAtKeyPath ks f)
+alterItemAtKeyPath  []    f plist= alterPropertyList f plist
+alterItemAtKeyPath (k:ks) f plist = case tryAlterDictionaryEntry k (alterItemAtKeyPath ks f) plist of
+    (_, False) -> error "Key path tries to pass through non-dictionary thing."
+    (plist, True) -> plist
 
 getPropertyListItemAtKeyPath :: PropertyListItem i =>
     [String] -> Maybe PropertyList -> Maybe i
