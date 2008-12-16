@@ -19,6 +19,10 @@ Library
   exposed-modules:      Data.PropertyList
   other-modules:        Data.PropertyList.Xml
                         Data.PropertyList.Xml.Dtd
+                        Data.PropertyList.Type
+                        Data.PropertyList.Parse
+                        Data.PropertyList.GetStuff
+                        Data.PropertyList.SetStuff
   build-depends:        base >= 3,
                         bytestring,
                         containers, 
