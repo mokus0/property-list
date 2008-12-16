@@ -5,6 +5,7 @@
 {-# LANGUAGE
     TypeSynonymInstances,
     FlexibleInstances,
+    GeneralizedNewtypeDeriving,
     TemplateHaskell
   #-}
 
@@ -86,6 +87,20 @@ instance PropertyListItem PropertyList where
 instance PropertyListItem [PropertyList] where
     toPropertyList = PLArray
     fromPropertyList (PLArray x) = Just x
+    fromPropertyList _ = Nothing
+
+-- |A newtype wrapper for lists, until (hopefully) we come up with a
+-- way to allow an instance roughly equivalent to:
+-- 
+-- > instance PropertyListItem a => PropertyListItem [a]
+-- 
+-- without breaking the 'String' instance
+newtype List x = List { unwrapList :: [x] }
+    deriving (Eq, Ord, Show, Functor, Monad)
+
+instance PropertyListItem a => PropertyListItem (List a) where
+    toPropertyList = PLArray . map toPropertyList . unwrapList
+    fromPropertyList (PLArray x) = fmap List (mapM fromPropertyList x)
     fromPropertyList _ = Nothing
 
 instance PropertyListItem ByteString where
