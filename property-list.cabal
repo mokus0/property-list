@@ -22,8 +22,6 @@ Library
                         Data.PropertyList.Type
                         Data.PropertyList.Parse
                         Data.PropertyList.PropertyListItem
-                        Data.PropertyList.GetStuff
-                        Data.PropertyList.SetStuff
   build-depends:        base >= 3,
                         bytestring,
                         containers, 
