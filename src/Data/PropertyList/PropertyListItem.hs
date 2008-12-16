@@ -26,7 +26,7 @@ import Control.Monad
 
 class PropertyListItem i where
     -- |Convert the item to a property list, usually by simply wrapping the
-    -- 
+    -- value with the appropriate 'PropertyList_' constructor
     toPropertyList :: i -> PropertyList
     
     -- |Convert a property list to a property list item if its contents
