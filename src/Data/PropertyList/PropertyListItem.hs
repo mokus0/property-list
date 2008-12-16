@@ -24,6 +24,7 @@ import Data.Char
 import Text.XML.HaXml.OneOfN
 
 import Control.Monad
+import Control.Monad.State
 
 class PropertyListItem i where
     -- |Convert the item to a property list, usually by simply wrapping the
@@ -38,45 +39,104 @@ class PropertyListItem i where
     -- fail.
     fromPropertyList :: PropertyList -> Maybe i
 
--- this stuff is pretty sketchy at present.  It works, but I don't think I
--- really like it.  The types and semantics just don't feel right yet.
-alterPropertyListIfPossible ::
-    (PropertyListItem i, PropertyListItem i') 
-    => (i -> (Maybe i', a))
-    -> PropertyList -> (Maybe PropertyList, Maybe a)
-alterPropertyListIfPossible f pl = case fmap f (fromPropertyList pl) of
-    Nothing -> (Just pl, Nothing)
-    Just (i', a) -> (fmap toPropertyList i', Just a)
+{-# SPECIALIZE alterPropertyListM :: Monad m => (Maybe (M.Map String PropertyList) -> m (Maybe (M.Map String PropertyList)))
+                    -> Maybe PropertyList -> m (Maybe PropertyList) #-}
+alterPropertyListM ::
+    (Monad m, PropertyListItem i, PropertyListItem i') 
+    => (Maybe i -> m (Maybe i'))
+    -> Maybe PropertyList -> m (Maybe PropertyList)
+alterPropertyListM f plist = do
+    i' <- f (plist >>= fromPropertyList)
+    return (fmap toPropertyList i')
 
-alterItemAtKeyPath ::
-    (PropertyListItem i, PropertyListItem i') 
-    => [String] -> (i -> (Maybe i', a))
-    -> PropertyList -> (Maybe PropertyList, Maybe a)
-alterItemAtKeyPath []     f = alterPropertyListIfPossible f
-alterItemAtKeyPath (k:ks) f = alterPropertyListIfPossible' 
-    (alterDictionaryEntryIfExists' k
-        (alterItemAtKeyPath ks f))
-    where
-        alterPropertyListIfPossible' ::
-            (PropertyListItem i, PropertyListItem i') 
-            => (i -> (i', Maybe a))
-            -> PropertyList -> (Maybe PropertyList, Maybe a)
-        alterPropertyListIfPossible' f pl = case fmap f (fromPropertyList pl) of
-            Nothing -> (Just pl, Nothing)
-            Just (i', a) -> (Just (toPropertyList i'), a)
+{-# SPECIALIZE alterDictionaryEntryM :: Monad m => String -> (Maybe PropertyList -> m (Maybe PropertyList))
+                    -> Maybe (M.Map String PropertyList) -> m (Maybe (M.Map String PropertyList)) #-}
+alterDictionaryEntryM ::
+    (Monad m, PropertyListItem i, PropertyListItem i') 
+    => String -> (Maybe i -> m (Maybe i'))
+    -> Maybe (M.Map String PropertyList) -> m (Maybe (M.Map String PropertyList))
+alterDictionaryEntryM k f Nothing = do
+    i' <- f Nothing
+    return (fmap (M.singleton k . toPropertyList) i')
+alterDictionaryEntryM k f (Just dict) = do
+    let (dict', i) = case M.splitLookup k dict of
+            (pre, v, post) -> (M.union pre post, fromPropertyList =<< v)
+    
+    i' <- f i
+    return $ case i' of
+        Nothing
+            | M.null dict'  -> Nothing
+            | otherwise     -> Just dict'
+        Just i' -> Just (M.insert k (toPropertyList i') dict)
         
-        alterDictionaryEntryIfExists' ::
-            (PropertyListItem i, PropertyListItem i') 
-            => String -> (i -> (Maybe i', Maybe a)) 
-            -> M.Map String PropertyList -> (M.Map String PropertyList, Maybe a)
-        alterDictionaryEntryIfExists' k f dict = case M.lookup k dict >>= fromPropertyList of
-            Nothing -> (dict, Nothing)
-            Just item -> case f item of
-                (item, a) -> (M.update (const (fmap toPropertyList item)) k dict, a)
+tryAlterDictionaryEntryM ::
+    (Monad m, PropertyListItem i, PropertyListItem i') 
+    => String -> (Maybe i -> m (Maybe i'))
+    -> Maybe PropertyList -> m (Maybe PropertyList)
+tryAlterDictionaryEntryM k f Nothing = do
+    d' <- alterDictionaryEntryM k f Nothing
+    return (fmap PLDict d')
+tryAlterDictionaryEntryM k f (Just (PLDict d)) = do
+    d' <- alterDictionaryEntryM k f (Just d)
+    return (fmap PLDict d')
+tryAlterDictionaryEntryM k f other = fail "Key path tries to pass through non-dictionary thing."
+
+alterItemAtKeyPathM ::
+    (Monad m, PropertyListItem i, PropertyListItem i')
+    => [String] -> (Maybe i -> m (Maybe i'))
+    -> Maybe PropertyList -> m (Maybe PropertyList)
+alterItemAtKeyPathM [] f = alterPropertyListM f
+alterItemAtKeyPathM (k:ks) f = tryAlterDictionaryEntryM k (alterItemAtKeyPathM ks f)
+
+alterPropertyList ::
+    (PropertyListItem i, PropertyListItem i') 
+    => (Maybe i -> Maybe i')
+    -> Maybe PropertyList -> Maybe PropertyList
+alterPropertyList f plist = fmap toPropertyList (f (fromPropertyList =<< plist))
+
+alterDictionaryEntry ::
+    (PropertyListItem i, PropertyListItem i') 
+    => String -> (Maybe i -> Maybe i')
+    -> Maybe (M.Map String PropertyList) -> Maybe (M.Map String PropertyList)
+alterDictionaryEntry k f Nothing = fmap (M.singleton k . toPropertyList) (f Nothing)
+alterDictionaryEntry k f (Just dict) = case i' of
+    Nothing
+        | M.null dict'  -> Nothing
+        | otherwise     -> Just dict'
+    Just i' -> Just (M.insert k (toPropertyList i') dict)
+    
+    where
+        (dict', i) = case M.splitLookup k dict of
+            (pre, v, post) -> (M.union pre post, fromPropertyList =<< v)
+        i' = f i
+
+tryAlterDictionaryEntry ::
+    (PropertyListItem i, PropertyListItem i') 
+    => String -> (Maybe i -> Maybe i')
+    -> Maybe PropertyList -> (Maybe PropertyList, Bool)
+tryAlterDictionaryEntry k f Nothing           = (fmap PLDict (alterDictionaryEntry k f Nothing), True)
+tryAlterDictionaryEntry k f (Just (PLDict d)) = (fmap PLDict (alterDictionaryEntry k f (Just d)), True)
+tryAlterDictionaryEntry k f other = (other, False)
+
+-- |TODO: capture the success/failure of the operation?
+-- (can fail if key path tries to enter something that isn't a dictionary)
+alterItemAtKeyPath :: 
+    (PropertyListItem i, PropertyListItem i')
+    => [String] -> (Maybe i -> Maybe i')
+    -> Maybe PropertyList -> Maybe PropertyList
+alterItemAtKeyPath [] f = alterPropertyList f
+alterItemAtKeyPath (k:ks) f = fst . tryAlterDictionaryEntry k (alterItemAtKeyPath ks f)
 
 getPropertyListItemAtKeyPath :: PropertyListItem i =>
-    [String] -> PropertyList -> Maybe i
-getPropertyListItemAtKeyPath path = snd . alterItemAtKeyPath path (\i -> (Just i,i))
+    [String] -> Maybe PropertyList -> Maybe i
+getPropertyListItemAtKeyPath path plist = execState 
+    (alterItemAtKeyPathM path (\e -> put e >> return e) plist)
+    Nothing
+
+setPropertyListItemAtKeyPath :: PropertyListItem i =>
+    [String] -> Maybe i -> Maybe PropertyList -> Maybe PropertyList
+setPropertyListItemAtKeyPath path value plist = alterItemAtKeyPath path 
+    (\e -> value `asTypeOf` e) plist
 
 instance PropertyListItem PropertyList where
     toPropertyList = id
