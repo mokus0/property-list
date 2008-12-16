@@ -32,4 +32,6 @@ Library
                         old-locale,
                         pretty,
                         time,
+                        
+                        template-haskell,
                         th-fold
