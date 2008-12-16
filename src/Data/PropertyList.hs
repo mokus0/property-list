@@ -10,6 +10,7 @@ module Data.PropertyList
     , readPropertyListFromFile
     , writePropertyListToFile
     
+    , module Data.PropertyList.PropertyListItem
     , module Data.PropertyList.GetStuff
     , module Data.PropertyList.SetStuff
     ) where
@@ -18,6 +19,7 @@ import Data.PropertyList.Type
 import Data.PropertyList.Parse
 import Data.PropertyList.Xml
 
+import Data.PropertyList.PropertyListItem
 import Data.PropertyList.GetStuff
 import Data.PropertyList.SetStuff
 
