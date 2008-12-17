@@ -1,6 +1,5 @@
 {-
  -      ``Data/PropertyList/PropertyListItem''
- -      (c) 2008 James Cook
  -}
 {-# LANGUAGE
     TypeSynonymInstances,

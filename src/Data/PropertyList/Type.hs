@@ -1,6 +1,5 @@
 {-
  -      ``Data/PropertyList/Type''
- -      (c) 2008 James Cook
  -}
 {-# LANGUAGE 
     TemplateHaskell
