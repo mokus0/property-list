@@ -175,7 +175,7 @@ instance PropertyListItem UTCTime where
     fromPropertyList (PLDate x) = Just x
     fromPropertyList _ = Nothing
 
-{-# SPECIALIZE instance PropertyListItem (M.Map String PropertyList) #-}
+-- {-# SPECIALIZE instance PropertyListItem (M.Map String PropertyList) #-}
 
 instance PropertyListItem a => PropertyListItem (M.Map String a) where
     toPropertyList = PLDict . fmap toPropertyList
