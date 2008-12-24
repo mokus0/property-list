@@ -11,6 +11,7 @@
 module Data.PropertyList.PropertyListItem where
 
 import Language.Haskell.TH
+import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Fold
 
 import Data.PropertyList.Type
@@ -234,7 +235,9 @@ instance PropertyListItem UnparsedPlistItem where
 --                                , fmap ThreeOf3 (fromPropertyList pl)
 --                                ]
 
-$(  let types = ''Either : map (mkName . ("OneOf" ++) . show) [2..20]
+$(  let types = ''Either : map (mkTcName . ("OneOf" ++) . show) [2..20]
+        mkTcName n = Name (mkOccName n) nameFlavour
+            where Name _ nameFlavour = ''OneOf2
         
         mkInstance typeName = do
             let -- the mkName above selects the TyCon in some ghcs and the DataCon in others...
