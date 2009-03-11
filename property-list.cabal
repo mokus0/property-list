@@ -26,7 +26,7 @@ Library
                         bytestring,
                         containers, 
                         dataenc,
-                        HaXml,
+                        HaXml >= 1.19,
                         mtl,
                         old-locale,
                         pretty,
