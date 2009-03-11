@@ -5,7 +5,7 @@
 
 module Data.PropertyList
     ( PropertyList
-    , PropertyList_(..)
+    , PropertyList_
     , UnparsedPlistItem(..)
     , readPropertyListFromFile
     , writePropertyListToFile

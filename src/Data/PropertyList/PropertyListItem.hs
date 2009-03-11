@@ -75,10 +75,10 @@ tryAlterDictionaryEntryM ::
     -> Maybe PropertyList -> m (Maybe PropertyList)
 tryAlterDictionaryEntryM k f Nothing = do
     d' <- alterDictionaryEntryM k f Nothing
-    return (fmap PLDict d')
-tryAlterDictionaryEntryM k f (Just (PLDict d)) = do
+    return (fmap plDict d')
+tryAlterDictionaryEntryM k f (Just (S (PLDict d))) = do
     d' <- alterDictionaryEntryM k f (Just d)
-    return (fmap PLDict d')
+    return (fmap plDict d')
 tryAlterDictionaryEntryM k f other = fail "Key path tries to pass through non-dictionary thing."
 
 alterItemAtKeyPathM ::
@@ -114,8 +114,8 @@ tryAlterDictionaryEntry ::
     (PropertyListItem i, PropertyListItem i') 
     => String -> (Maybe i -> Maybe i')
     -> Maybe PropertyList -> (Maybe PropertyList, Bool)
-tryAlterDictionaryEntry k f Nothing           = (fmap PLDict (alterDictionaryEntry k f Nothing), True)
-tryAlterDictionaryEntry k f (Just (PLDict d)) = (fmap PLDict (alterDictionaryEntry k f (Just d)), True)
+tryAlterDictionaryEntry k f Nothing           = (fmap plDict (alterDictionaryEntry k f Nothing), True)
+tryAlterDictionaryEntry k f (Just (S (PLDict d))) = (fmap plDict (alterDictionaryEntry k f (Just d)), True)
 tryAlterDictionaryEntry k f other = (other, False)
 
 -- |TODO: capture the success/failure of the operation?
@@ -147,8 +147,8 @@ instance PropertyListItem PropertyList where
 -- can't make this polymorphic in the list element because
 -- of overlap with 'String'
 instance PropertyListItem [PropertyList] where
-    toPropertyList = PLArray
-    fromPropertyList (PLArray x) = Just x
+    toPropertyList = plArray
+    fromPropertyList (S (PLArray x)) = Just x
     fromPropertyList _ = Nothing
 
 -- |A newtype wrapper for lists, until (hopefully) we come up with a
@@ -161,59 +161,59 @@ newtype List x = List { unwrapList :: [x] }
     deriving (Eq, Ord, Show, Functor, Monad)
 
 instance PropertyListItem a => PropertyListItem (List a) where
-    toPropertyList = PLArray . map toPropertyList . unwrapList
-    fromPropertyList (PLArray x) = fmap List (mapM fromPropertyList x)
+    toPropertyList = plArray . map toPropertyList . unwrapList
+    fromPropertyList (S (PLArray x)) = fmap List (mapM fromPropertyList x)
     fromPropertyList _ = Nothing
 
 instance PropertyListItem ByteString where
-    toPropertyList = PLData
-    fromPropertyList (PLData x) = Just x
+    toPropertyList = plData
+    fromPropertyList (S (PLData x)) = Just x
     fromPropertyList _ = Nothing
 
 instance PropertyListItem UTCTime where
-    toPropertyList = PLDate
-    fromPropertyList (PLDate x) = Just x
+    toPropertyList = plDate
+    fromPropertyList (S (PLDate x)) = Just x
     fromPropertyList _ = Nothing
 
--- {-# SPECIALIZE instance PropertyListItem (M.Map String PropertyList) #-}
-
 instance PropertyListItem a => PropertyListItem (M.Map String a) where
-    toPropertyList = PLDict . fmap toPropertyList
-    fromPropertyList (PLDict x) = fmapM fromPropertyList x
+    {-# SPECIALIZE instance PropertyListItem (M.Map String PropertyList) #-}
+    
+    toPropertyList = plDict . fmap toPropertyList
+    fromPropertyList (S (PLDict x)) = fmapM fromPropertyList x
         where fmapM f m = fmap M.fromList $ 
                             sequence [ do { v <- f v; return (k, v)}
                                      | (k, v) <- M.toList m ]
     fromPropertyList _ = Nothing
 
 instance PropertyListItem Double where
-    toPropertyList = PLReal
-    fromPropertyList (PLReal d) = Just d
-    fromPropertyList (PLString s) = case reads s of
+    toPropertyList = plReal
+    fromPropertyList (S (PLReal d)) = Just d
+    fromPropertyList (S (PLString s)) = case reads s of
         [(d, "")] -> Just d
         _ -> Nothing
     fromPropertyList _ = Nothing
 
 instance PropertyListItem Integer where
-    toPropertyList = PLInt
-    fromPropertyList (PLInt i) = Just i
-    fromPropertyList (PLString s) = case reads s of
+    toPropertyList = plInt
+    fromPropertyList (S (PLInt i)) = Just i
+    fromPropertyList (S (PLString s)) = case reads s of
         [(i, "")] -> Just i
         _ -> Nothing
     fromPropertyList _ = Nothing
 
 instance PropertyListItem String where
-    toPropertyList = PLString
-    fromPropertyList (PLString x) = Just x
-    fromPropertyList (PLBool True) = Just "YES"
-    fromPropertyList (PLBool False) = Just "NO"
-    fromPropertyList (PLInt i) = Just (show i)
-    fromPropertyList (PLReal d) = Just (show d)
+    toPropertyList = plString
+    fromPropertyList (S (PLString x)) = Just x
+    fromPropertyList (S (PLBool True)) = Just "YES"
+    fromPropertyList (S (PLBool False)) = Just "NO"
+    fromPropertyList (S (PLInt i)) = Just (show i)
+    fromPropertyList (S (PLReal d)) = Just (show d)
     fromPropertyList _ = Nothing
 
 instance PropertyListItem Bool where
-    toPropertyList = PLBool
-    fromPropertyList (PLBool d) = Just d
-    fromPropertyList (PLString b)
+    toPropertyList = plBool
+    fromPropertyList (S (PLBool d)) = Just d
+    fromPropertyList (S (PLString b))
         | map toLower b `elem` ["yes", "true"]
         = Just True
         | map toLower b `elem` ["no", "false"]
@@ -221,8 +221,8 @@ instance PropertyListItem Bool where
     fromPropertyList _ = Nothing
 
 instance PropertyListItem UnparsedPlistItem where
-    toPropertyList = PLVar
-    fromPropertyList (PLVar d) = Just d
+    toPropertyList = plVar
+    fromPropertyList (V d) = Just d
     fromPropertyList _ = Nothing
 
 -- The following TH generates, for Either and for all OneOfN types

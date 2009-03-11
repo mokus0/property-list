@@ -49,19 +49,19 @@ plistItemToPropertyList = plistToPropertyList . plistItemToPlist
 
 parsePlistItem :: PlistItem -> Either (PropertyList_ PlistItem) UnparsedPlistItem
 parsePlistItem item = case item of
-        OneOf9   (Array x   )   -> accept PLArray (map return x)
+        OneOf9   (Array x   )   -> accept plArray (map return x)
         TwoOf9   (Data x    )   -> case decode x of 
-                Just d                  -> accept PLData (pack d)
+                Just d                  -> accept plData (pack d)
                 Nothing                 -> reject UnparsedData x
         ThreeOf9 (Date x    )   -> case parseTime defaultTimeLocale dateFormat x of
-                Just t                  -> accept PLDate t
+                Just t                  -> accept plDate t
                 Nothing                 -> reject UnparsedDate x
-        FourOf9  (Dict x    )   -> accept PLDict (M.fromList [ (k, return v) | Dict_ (Key k) v <- x])
-        FiveOf9  (AReal x   )   -> tryRead PLReal UnparsedReal x
-        SixOf9   (AInteger x)   -> tryRead PLInt  UnparsedInt x
-        SevenOf9 (AString  x)   -> accept PLString x
-        EightOf9 (X.True    )   -> accept PLBool P.True
-        NineOf9  (X.False   )   -> accept PLBool P.False
+        FourOf9  (Dict x    )   -> accept plDict (M.fromList [ (k, return v) | Dict_ (Key k) v <- x])
+        FiveOf9  (AReal x   )   -> tryRead plReal UnparsedReal x
+        SixOf9   (AInteger x)   -> tryRead plInt  UnparsedInt x
+        SevenOf9 (AString  x)   -> accept plString x
+        EightOf9 (X.True    )   -> accept plBool P.True
+        NineOf9  (X.False   )   -> accept plBool P.False
         
         where
                 accept :: (a -> b) -> a -> Either b c
