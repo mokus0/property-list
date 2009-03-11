@@ -240,35 +240,7 @@ $(  let types = ''Either : map (mkTcName . ("OneOf" ++) . show) [2..20]
             where Name _ nameFlavour = ''OneOf2
         
         mkInstance typeName = do
-            let -- the mkName above selects the TyCon in some ghcs and the DataCon in others...
-                -- there's probably an easier / cleaner way to sort that out, but I didn't bother looking for it.
-                getTypeName (ForallT _ _ t) = getTypeName t
-                getTypeName (VarT _)        = Nothing
-                getTypeName (ConT n)        = Just n
-                getTypeName (AppT x y)      = getTypeName x `mplus` getTypeName y
-                getTypeName (ArrowT)        = Nothing
-                getTypeName (ListT)         = Nothing
-                getTypeName (TupleT n)      = Nothing
-                
-                getCons name = do
-                    tyCon <- reify name
-                    case tyCon of
-                        DataConI _ t _ _ -> 
-                            case getTypeName t of
-                                Just name -> getCons name
-                                Nothing -> fail $ unwords 
-                                    [ "unexpected Type in DataConI"
-                                    , show name, "-", show t
-                                    ]
-                        TyConI (DataD _ _ _ cons _) -> return (cons, name)
-                        otherTycon -> fail $ unwords 
-                            [ "unexpected result from reify"
-                            , show name, "-", show otherTycon
-                            ]
-
-                
-            
-            (cons, typeName) <- getCons typeName
+            TyConI (DataD _ _ _ cons _) <- reify typeName
             let conNames = [name | NormalC name _ <- cons]
             
             tyVarNames <- zipWithM (\con n -> newName ("a" ++ show n)) conNames [1..]
