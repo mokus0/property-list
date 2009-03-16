@@ -193,6 +193,10 @@ instance PropertyListItem Double where
         _ -> Nothing
     fromPropertyList _ = Nothing
 
+instance PropertyListItem Float where
+    toPropertyList = toPropertyList . (realToFrac :: Float -> Double)
+    fromPropertyList = fmap (realToFrac :: Double -> Float) . fromPropertyList
+
 instance PropertyListItem Integer where
     toPropertyList = plInt
     fromPropertyList (S (PLInt i)) = Just i
@@ -200,6 +204,10 @@ instance PropertyListItem Integer where
         [(i, "")] -> Just i
         _ -> Nothing
     fromPropertyList _ = Nothing
+
+instance PropertyListItem Int where
+    toPropertyList = toPropertyList . toInteger
+    fromPropertyList = fmap fromInteger . fromPropertyList
 
 instance PropertyListItem String where
     toPropertyList = plString
