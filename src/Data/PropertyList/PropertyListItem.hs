@@ -39,6 +39,10 @@ class PropertyListItem i where
     -- fail.
     fromPropertyList :: PropertyList -> Maybe i
     
+    -- |In order to support a general instance for lists without breaking
+    -- String, we use the same trick as the Prelude uses for Show.
+    -- Generally, the list methods should not be overridden, and maybe
+    -- they shouldn't even be exported.
     listToPropertyList :: [i] -> PropertyList
     listToPropertyList      = plArray . map toPropertyList
     
