@@ -158,20 +158,6 @@ instance PropertyListItem a => PropertyListItem [a] where
     toPropertyList = listToPropertyList
     fromPropertyList = listFromPropertyList
 
--- |A newtype wrapper for lists, until (hopefully) we come up with a
--- way to allow an instance roughly equivalent to:
--- 
--- > instance PropertyListItem a => PropertyListItem [a]
--- 
--- without breaking the 'String' instance
-newtype List x = List { unwrapList :: [x] }
-    deriving (Eq, Ord, Show, Functor, Monad)
-
-instance PropertyListItem a => PropertyListItem (List a) where
-    toPropertyList = plArray . map toPropertyList . unwrapList
-    fromPropertyList (S (PLArray x)) = fmap List (mapM fromPropertyList x)
-    fromPropertyList _ = Nothing
-
 instance PropertyListItem ByteString where
     toPropertyList = plData
     fromPropertyList (S (PLData x)) = Just x
