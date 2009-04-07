@@ -187,6 +187,7 @@ instance PropertyListItem a => PropertyListItem (M.Map String a) where
 
 instance PropertyListItem Double where
     toPropertyList = plReal
+    fromPropertyList (S (PLInt i)) =  Just (fromInteger i)
     fromPropertyList (S (PLReal d)) = Just d
     fromPropertyList (S (PLString s)) = case reads s of
         [(d, "")] -> Just d
@@ -200,6 +201,9 @@ instance PropertyListItem Float where
 instance PropertyListItem Integer where
     toPropertyList = plInt
     fromPropertyList (S (PLInt i)) = Just i
+    fromPropertyList (S (PLReal d)) = case properFraction d of
+        (i, 0) -> Just i
+        _ -> Nothing
     fromPropertyList (S (PLString s)) = case reads s of
         [(i, "")] -> Just i
         _ -> Nothing
