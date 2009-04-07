@@ -242,7 +242,10 @@ instance PropertyListItem UnparsedPlistItem where
 --                                , fmap ThreeOf3 (fromPropertyList pl)
 --                                ]
 
-$(  let types = ''Either : map (mkTcName . ("OneOf" ++) . show) [2..20]
+$(  let types = ''Either : [mkTcName ("OneOf" ++ show n) | n <- [2..20]]
+        -- mkTcName ensures we have the type constructor and not the data constructor
+        -- by assembling it with its 'flavour' explicitly set to match that of a known
+        -- type constructor.
         mkTcName n = Name (mkOccName n) nameFlavour
             where Name _ nameFlavour = ''OneOf2
         
@@ -250,9 +253,9 @@ $(  let types = ''Either : map (mkTcName . ("OneOf" ++) . show) [2..20]
             TyConI (DataD _ _ _ cons _) <- reify typeName
             let conNames = [name | NormalC name _ <- cons]
             
-            tyVarNames <- zipWithM (\con n -> newName ("a" ++ show n)) conNames [1..]
-        
-            let tyVars = map varT tyVarNames
+            let tyVarNames = zipWith (\con n -> mkName ("a" ++ show n)) conNames [1..]
+                
+                tyVars = map varT tyVarNames
                 typeWithVars = foldl appT (conT typeName) tyVars
                 
                 cxt = mapM (appT (conT ''PropertyListItem)) tyVars
