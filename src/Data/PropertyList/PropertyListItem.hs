@@ -38,6 +38,14 @@ class PropertyListItem i where
     -- dictionary of a non-'Int' type will cause the entire conversion to
     -- fail.
     fromPropertyList :: PropertyList -> Maybe i
+    
+    listToPropertyList :: [i] -> PropertyList
+    listToPropertyList      = plArray . map toPropertyList
+    
+    listFromPropertyList :: PropertyList -> Maybe [i]
+    listFromPropertyList (S (PLArray x))    = mapM fromPropertyList x
+    listFromPropertyList _ = Nothing
+
 
 {-# SPECIALIZE alterPropertyListM :: Monad m => (Maybe (M.Map String PropertyList) -> m (Maybe (M.Map String PropertyList)))
                     -> Maybe PropertyList -> m (Maybe PropertyList) #-}
@@ -146,10 +154,9 @@ instance PropertyListItem PropertyList where
 
 -- can't make this polymorphic in the list element because
 -- of overlap with 'String'
-instance PropertyListItem [PropertyList] where
-    toPropertyList = plArray
-    fromPropertyList (S (PLArray x)) = Just x
-    fromPropertyList _ = Nothing
+instance PropertyListItem a => PropertyListItem [a] where
+    toPropertyList = listToPropertyList
+    fromPropertyList = listFromPropertyList
 
 -- |A newtype wrapper for lists, until (hopefully) we come up with a
 -- way to allow an instance roughly equivalent to:
@@ -213,14 +220,19 @@ instance PropertyListItem Int where
     toPropertyList = toPropertyList . toInteger
     fromPropertyList = fmap fromInteger . fromPropertyList
 
-instance PropertyListItem String where
-    toPropertyList = plString
-    fromPropertyList (S (PLString x)) = Just x
-    fromPropertyList (S (PLBool True)) = Just "YES"
-    fromPropertyList (S (PLBool False)) = Just "NO"
-    fromPropertyList (S (PLInt i)) = Just (show i)
-    fromPropertyList (S (PLReal d)) = Just (show d)
+-- this doesnt make much sense by itself, but must be here to support strings
+instance PropertyListItem Char where
+    toPropertyList c = plString [c]
+    fromPropertyList (S (PLString [c])) = Just c
     fromPropertyList _ = Nothing
+    
+    listToPropertyList = plString
+    listFromPropertyList (S (PLString x)) = Just x
+    listFromPropertyList (S (PLBool True)) = Just "YES"
+    listFromPropertyList (S (PLBool False)) = Just "NO"
+    listFromPropertyList (S (PLInt i)) = Just (show i)
+    listFromPropertyList (S (PLReal d)) = Just (show d)
+    listFromPropertyList other = Nothing
 
 instance PropertyListItem Bool where
     toPropertyList = plBool
