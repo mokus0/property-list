@@ -46,6 +46,9 @@ class PropertyListItem i where
     listFromPropertyList (S (PLArray x))    = mapM fromPropertyList x
     listFromPropertyList _ = Nothing
 
+instance PropertyListItem a => PropertyListItem [a] where
+    toPropertyList = listToPropertyList
+    fromPropertyList = listFromPropertyList
 
 {-# SPECIALIZE alterPropertyListM :: Monad m => (Maybe (M.Map String PropertyList) -> m (Maybe (M.Map String PropertyList)))
                     -> Maybe PropertyList -> m (Maybe PropertyList) #-}
@@ -151,12 +154,6 @@ setItemAtKeyPath path value plist = alterItemAtKeyPath path
 instance PropertyListItem PropertyList where
     toPropertyList = id
     fromPropertyList = Just
-
--- can't make this polymorphic in the list element because
--- of overlap with 'String'
-instance PropertyListItem a => PropertyListItem [a] where
-    toPropertyList = listToPropertyList
-    fromPropertyList = listFromPropertyList
 
 instance PropertyListItem ByteString where
     toPropertyList = plData
