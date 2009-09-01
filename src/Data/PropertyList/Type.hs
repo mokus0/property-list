@@ -12,6 +12,8 @@ import qualified Data.Map as M
 import Data.ByteString as B hiding (map)
 import Data.Time
 
+-- |A property list possibly containing unparsed items (only when items fail 
+-- to parse or the user puts them there)
 type PropertyList = PropertyList_ UnparsedPlistItem
 
 data PropertyListS l m a
@@ -62,6 +64,8 @@ instance (Show (f (M f a)), Show a) => Show (M f a) where
 
 -- instance Read...
 
+-- |The property-list term algebra type itself, parameterized over the type of
+-- "structural holes" in the terms.
 type PropertyList_ = M (PropertyListS [] (M.Map String))
 
 plArray     x   = S (PLArray  x)

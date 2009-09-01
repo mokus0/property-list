@@ -23,6 +23,7 @@ import Text.XML.HaXml.OneOfN
 import Control.Monad
 import Control.Monad.State
 
+-- |A class for items which can be converted to and from property lists
 class PropertyListItem i where
     -- |Convert the item to a property list, usually by simply wrapping the
     -- value with the appropriate 'PropertyList_' constructor
@@ -204,7 +205,7 @@ instance PropertyListItem Int where
     toPropertyList = toPropertyList . toInteger
     fromPropertyList = fmap fromInteger . fromPropertyList
 
--- this doesnt make much sense by itself, but must be here to support strings
+-- this instance doesnt make much sense by itself, but must be here to support strings
 instance PropertyListItem Char where
     toPropertyList c = plString [c]
     fromPropertyList (S (PLString [c])) = Just c
