@@ -1,6 +1,3 @@
-{-
- -      ``Data/PropertyList/Parse''
- -}
 {-# LANGUAGE 
     TemplateHaskell
   #-}
@@ -23,7 +20,7 @@ import Codec.Binary.Base64 as B64
 import Text.XML.HaXml.OneOfN
 import Text.XML.HaXml.XmlContent
 
--- run an incremental parser - a function which takes
+-- |run an incremental parser - a function which takes
 -- a token type and returns either a subterm (possibly still
 -- containing unparsed tokens) or an unparsed token (possibly
 -- a new token, maybe even of a new type).  This interpretation

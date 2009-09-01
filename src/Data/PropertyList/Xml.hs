@@ -1,6 +1,3 @@
-{-
- -      ``Data/PropertyList/Xml''
- -}
 {-# LANGUAGE
         TemplateHaskell
   #-}

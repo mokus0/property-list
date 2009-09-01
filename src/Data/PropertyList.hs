@@ -1,8 +1,3 @@
-{-
- -      ``Data/PropertyList''
- -      rough cut type/reader/writer for Apple Property List format
- -}
-
 module Data.PropertyList
     ( PropertyList
     , PropertyList_

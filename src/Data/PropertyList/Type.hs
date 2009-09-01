@@ -1,6 +1,3 @@
-{-
- -      ``Data/PropertyList/Type''
- -}
 {-# LANGUAGE 
     TemplateHaskell,
     FlexibleContexts, UndecidableInstances,

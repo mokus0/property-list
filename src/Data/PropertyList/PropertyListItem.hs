@@ -1,6 +1,3 @@
-{-
- -      ``Data/PropertyList/PropertyListItem''
- -}
 {-# LANGUAGE
     TypeSynonymInstances,
     FlexibleInstances,
