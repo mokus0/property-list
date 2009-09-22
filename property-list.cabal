@@ -1,5 +1,5 @@
 name:                   property-list
-version:                0.0.0.3
+version:                0.0.0.4
 stability:              experimental
 license:                PublicDomain
 
@@ -22,10 +22,12 @@ Library
                         Data.PropertyList.Type
                         Data.PropertyList.Parse
                         Data.PropertyList.PropertyListItem
+                        Data.PropertyList.Object
   build-depends:        base >= 3 && <5,
                         bytestring,
                         containers, 
                         dataenc,
+                        data-object,
                         HaXml >= 1.19,
                         mtl,
                         old-locale,

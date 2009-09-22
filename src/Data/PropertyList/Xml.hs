@@ -20,6 +20,9 @@ import Language.Haskell.TH.Fold
 
 type PlistItem = OneOf9 Array Data Date Dict AReal AInteger AString X.True X.False
 
+readPlist :: String -> Either String Plist
+readPlist = readXml
+
 readPlistFromFile :: FilePath -> IO (Either String Plist)
 readPlistFromFile path = do
         contents <- readFile path
