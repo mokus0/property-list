@@ -1,5 +1,5 @@
 {-# LANGUAGE 
-        FlexibleContexts, UndecidableInstances
+        FlexibleContexts, UndecidableInstances, CPP
   #-}
 module Data.PropertyList.Object ({- instances only -}) where
 
@@ -7,7 +7,11 @@ import Data.Object
 import Data.PropertyList.Type
 import Data.PropertyList.Parse
 import Data.PropertyList.Xml
+#ifdef data_object_uses_lazy_bytestrings
+import Data.ByteString.Lazy.Char8
+#else
 import Data.ByteString.Char8
+#endif
 import qualified Data.Map as M
 import Control.Monad
 import Control.Monad
