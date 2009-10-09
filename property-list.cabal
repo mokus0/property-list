@@ -14,6 +14,11 @@ category:               Data, Parsing
 synopsis:               XML property list parser
 description:            Parser, data type and formatter for Apple's XML property list 1.0 format.
 
+flag new-data-object
+  description:          Use the new version of the data-object package (>= 0.0.2)
+                        Which has a "generic object" type and uses lazy bytestrings
+  default:              True
+
 Library
   hs-source-dirs:       src
   exposed-modules:      Data.PropertyList
@@ -35,3 +40,10 @@ Library
                         
                         template-haskell,
                         th-fold
+
+  if flag(new-data-object)
+    build-depends:      data-object >= 0.0.2
+    cpp-options:        -DNEW_DATA_OBJECT
+  else
+    build-depends:      data-object <  0.0.2
+    

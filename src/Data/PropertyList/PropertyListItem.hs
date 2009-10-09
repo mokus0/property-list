@@ -2,7 +2,7 @@
     TypeSynonymInstances,
     FlexibleInstances,
     GeneralizedNewtypeDeriving,
-    TemplateHaskell
+    TemplateHaskell, CPP
   #-}
 
 module Data.PropertyList.PropertyListItem where
@@ -15,6 +15,9 @@ import Data.PropertyList.Type
 
 import qualified Data.Map as M
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as Lazy (ByteString)
+import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.ByteString.Class
 import Data.Time
 import Data.Char
 
@@ -22,6 +25,8 @@ import Text.XML.HaXml.OneOfN
 
 import Control.Monad
 import Control.Monad.State
+
+import Data.Object
 
 -- |A class for items which can be converted to and from property lists
 class PropertyListItem i where
@@ -159,7 +164,14 @@ instance PropertyListItem PropertyList where
 
 instance PropertyListItem ByteString where
     toPropertyList = plData
-    fromPropertyList (S (PLData x)) = Just x
+    fromPropertyList (S (PLData x))   = Just x
+    fromPropertyList (S (PLString x)) = Just (toStrictByteString x)
+    fromPropertyList _ = Nothing
+
+instance PropertyListItem Lazy.ByteString where
+    toPropertyList = plData . toStrictByteString
+    fromPropertyList (S (PLData   x)) = Just (toLazyByteString x)
+    fromPropertyList (S (PLString x)) = Just (toLazyByteString x)
     fromPropertyList _ = Nothing
 
 instance PropertyListItem UTCTime where
@@ -213,6 +225,7 @@ instance PropertyListItem Char where
     
     listToPropertyList = plString
     listFromPropertyList (S (PLString x)) = Just x
+    listFromPropertyList (S (PLData x))   = Just (fromStrictByteString x)
     listFromPropertyList (S (PLBool True)) = Just "YES"
     listFromPropertyList (S (PLBool False)) = Just "NO"
     listFromPropertyList (S (PLInt i)) = Just (show i)
@@ -233,6 +246,27 @@ instance PropertyListItem UnparsedPlistItem where
     toPropertyList = plVar
     fromPropertyList (V d) = Just d
     fromPropertyList _ = Nothing
+
+-- |Note that due to 'Object''s use of 'Lazy.ByteString's, scalars become data, not strings.
+-- Using @GenObject key String@ instead of 'Object' will cause scalars to be encoded as plist strings.
+#ifdef NEW_DATA_OBJECT
+instance (PropertyListItem val, LazyByteString key) => PropertyListItem (GenObject key val) where
+#else
+instance PropertyListItem Object where
+#endif
+    toPropertyList (Mapping  m) = toPropertyList (M.fromList [(toStr k, v) | (k,v) <- m])
+        where toStr = unpack . toLazyByteString
+    toPropertyList (Sequence s) = toPropertyList s
+    toPropertyList (Scalar   s) = toPropertyList s
+    
+    fromPropertyList plist = msum
+        [ do
+            m <- fromPropertyList plist
+            let fromStr = fromLazyByteString . pack
+            return (Mapping [(fromStr k, v) | (k,v) <- M.assocs m])
+        , fmap Sequence (fromPropertyList plist)
+        , fmap Scalar   (fromPropertyList plist)
+        ]
 
 -- The following TH generates, for Either and for all OneOfN types
 --  (N in [2..20]), an instance of the form:
