@@ -14,9 +14,6 @@ category:               Data, Parsing
 synopsis:               XML property list parser
 description:            Parser, data type and formatter for Apple's XML property list 1.0 format.
 
-flag data_object_uses_lazy_bytestrings
-  default:              True
-
 Library
   hs-source-dirs:       src
   exposed-modules:      Data.PropertyList
@@ -38,10 +35,3 @@ Library
                         
                         template-haskell,
                         th-fold
-
-  if flag(data_object_uses_lazy_bytestrings)
-    build-depends:      data-object >= 0.0.2
-    cpp-options:        -Ddata_object_uses_lazy_bytestrings
-  else
-    build-depends:      data-object <  0.0.2
-    
