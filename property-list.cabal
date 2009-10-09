@@ -30,6 +30,7 @@ Library
                         Data.PropertyList.Object
   build-depends:        base >= 3 && <5,
                         bytestring,
+                        bytestring-class,
                         containers, 
                         dataenc,
                         HaXml >= 1.19,
