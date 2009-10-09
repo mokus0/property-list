@@ -22,10 +22,11 @@ import Text.XML.HaXml.XmlContent
 
 -- |run an incremental parser - a function which takes
 -- a token type and returns either a subterm (possibly still
--- containing unparsed tokens) or an unparsed token (possibly
+-- containing unparsed tokens) or an unparseable token (possibly
 -- a new token, maybe even of a new type).  This interpretation
 -- of the action of this function is based on a term-algebra
--- view of the monad in question.
+-- view of the monad in question, where the 'variable' sort
+-- consists of unparsed fragments of the source data.
 parseT :: Monad t => (a -> Either (t a) b) -> a -> t b
 parseT f = parse
         where parse token =
