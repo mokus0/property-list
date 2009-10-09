@@ -94,8 +94,6 @@ instance Functor f => Monad (M f) where
     (S x) >>= f = S (fmap (>>= f) x)
     (V x) >>= f = f x
 
--- TODO: if possible, make 'fold' in th-utils detect the Functor instances for
--- [] and Map k and automagically generate the call to fmap here
 foldPropertyList :: (Functor list, Functor map)
                  => (list a -> a)
                  -> (ByteString -> a)
