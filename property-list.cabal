@@ -16,7 +16,8 @@ description:            Parser, data type and formatter for Apple's XML property
 
 flag new-data-object
   description:          Use the new version of the data-object package (>= 0.0.2)
-                        Which has a "generic object" type and uses lazy bytestrings
+                        Which has a "generic object" type in place of the simpler
+                        Object type in previous versions.
   default:              True
 
 Library
