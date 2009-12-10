@@ -90,7 +90,7 @@ Library
   if flag(HaXml_1_13)
     other-modules:      Data.PropertyList.Xml.Dtd_1_13
     cpp-options:        -DHaXml_1_13
-    build-depends:      HaXml == 1.13.*,
+    build-depends:      HaXml >= 1.13 && <1.14,
                         bytestring == 0.9.1.4,
                         bytestring-class == 0.0.0,
                         data-object == 0.0.2,
