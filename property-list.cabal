@@ -13,6 +13,14 @@ homepage:               http://code.haskell.org/~mokus/property-list
 category:               Data, Parsing, XML
 synopsis:               XML property list parser
 description:            Parser, data type and formatter for Apple's XML property list 1.0 format.
+                        
+                        The bytestring-0.9.1.5 update on hackage seems to have 
+                        cratered the build for many packages, including the last
+                        several versions of this one, so this version will
+                        probably not build properly on the hackage site. 
+                        As far as I know, though, that is the only reason
+                        it fails. This version includes a hack to try to make
+                        it build on the site, triggered by the "HaXml_1_13" build flag.
 
 flag new-data-object
   description:          Use the new version of the data-object package (>= 0.0.2)
@@ -25,11 +33,30 @@ flag new-template-haskell
                         generated @PropertyListItem OneOfN@ instances break.
                         So, detect it and deal with it.
 
+flag HaXml_1_13
+  default:              False
+  description:          The Hackage website builder is currently very finicky
+                        and the bytestring-0.9.1.5 update has made me very
+                        frustrated, because the last several versions of this
+                        package have failed to build because of it.  
+                        The "preferred-versions" fallback fails too, because
+                        the additional HaXml constraint combined with the
+                        one here becomes unsatisfiable.  So, I'm gonna make
+                        this thing work with HaXml 1.13 now.  
+                        
+                        And, as an additional hack to make sure it works, 
+                        this flag will also trigger dependencies on specific 
+                        versions of packages known to have been built against 
+                        bytestring-0.9.1.4 on the hackage server.
+                        
+                        Once ghc-6.12 is released, this should no longer be
+                        a problem and I can clean up the mess I've made here.
+                        
+
 Library
   hs-source-dirs:       src
   exposed-modules:      Data.PropertyList
   other-modules:        Data.PropertyList.Xml
-                        Data.PropertyList.Xml.Dtd
                         Data.PropertyList.Type
                         Data.PropertyList.Parse
                         Data.PropertyList.PropertyListItem
@@ -39,7 +66,6 @@ Library
                         bytestring-class,
                         containers, 
                         dataenc,
-                        HaXml >= 1.19,
                         mtl,
                         old-locale,
                         pretty,
@@ -60,4 +86,18 @@ Library
     cpp-options:        -DNEW_DATA_OBJECT
   else
     build-depends:      data-object <  0.0.2
-    
+
+  if flag(HaXml_1_13)
+    other-modules:      Data.PropertyList.Xml.Dtd_1_13
+    cpp-options:        -DHaXml_1_13
+    build-depends:      HaXml == 1.13.*,
+                        bytestring == 0.9.1.4,
+                        bytestring-class == 0.0.0,
+                        data-object == 0.0.2,
+                        
+                        utf8-string == 0.3.5
+                        -- (transitive dependency brought in by bytestring-class)
+                        
+  else
+    other-modules:      Data.PropertyList.Xml.Dtd
+    build-depends:      HaXml >= 1.19

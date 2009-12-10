@@ -1,16 +1,22 @@
 {-# LANGUAGE
-        TemplateHaskell
+        TemplateHaskell, CPP
   #-}
 
 module Data.PropertyList.Xml where
 
 import Prelude as P
-import Data.PropertyList.Xml.Dtd as X
 
 import Text.XML.HaXml.OneOfN
 
+#ifdef HaXml_1_13
+import Data.PropertyList.Xml.Dtd_1_13 as X
+import Text.XML.HaXml.Xml2Haskell hiding (showXml, readXml)
+import qualified Text.XML.HaXml.Xml2Haskell as X2H
+#else
+import Data.PropertyList.Xml.Dtd as X
 import Text.XML.HaXml.XmlContent
         hiding (showXml, toXml)
+#endif
 
 import Text.PrettyPrint.HughesPJ (render)
 import Text.XML.HaXml.Pretty   (document)
@@ -32,13 +38,33 @@ writePlistToFile :: FilePath -> Plist -> IO ()
 writePlistToFile path plist = do
         writeFile path (showXml plist)
 
+#ifdef HaXml_1_13
+
+readXml :: String -> Either String Plist
+readXml xml = case X2H.readXml xml of
+    Nothing     -> Left "readXml: parse failed"
+    Just plist  -> Right plist
+
+showXml :: Plist -> String
+showXml = X2H.showXml
+
+toXml :: Plist -> Document
+toXml value =
+    Document (Prolog (Just (XMLDecl "1.0" Nothing Nothing)) [] Nothing [])
+             emptyST
+             ( case (toElem value) of
+                 [CElem e] -> e
+                 )
+             []
+
+#else
+
 -- | Convert a fully-typed XML document to a string (without DTD).
 showXml :: Plist -> String
 showXml x =
     case toContents x of
       [CElem _ _] -> (render . document . toXml) x
       _ -> ""
-
 
 toXml :: Plist -> Document ()
 toXml value =
@@ -48,6 +74,8 @@ toXml value =
                  [CElem e ()] -> e
                  )
              []
+
+#endif
 
 plistToPlistItem :: Plist -> PlistItem
 plistToPlistItem = $(fold ''Plist)

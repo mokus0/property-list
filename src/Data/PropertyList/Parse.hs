@@ -1,5 +1,5 @@
 {-# LANGUAGE 
-    TemplateHaskell
+    TemplateHaskell, CPP
   #-}
 
 module Data.PropertyList.Parse where
@@ -7,7 +7,13 @@ module Data.PropertyList.Parse where
 import Language.Haskell.TH.Fold
 
 import Prelude as P
+#ifdef HaXml_1_13
+import Data.PropertyList.Xml.Dtd_1_13 as X
+#else
 import Data.PropertyList.Xml.Dtd as X
+import Text.XML.HaXml.XmlContent
+#endif
+
 import Data.PropertyList.Xml
 import Data.PropertyList.Type
 
@@ -18,7 +24,6 @@ import System.Locale
 import Codec.Binary.Base64 as B64
 
 import Text.XML.HaXml.OneOfN
-import Text.XML.HaXml.XmlContent
 
 -- |run an incremental parser - a function which takes
 -- a token type and returns either a subterm (possibly still
