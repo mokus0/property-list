@@ -1,5 +1,5 @@
 name:                   property-list
-version:                0.0.0.6
+version:                0.0.0.7
 stability:              experimental
 license:                PublicDomain
 
@@ -47,6 +47,8 @@ Library
                         th-fold
 
   if flag(new-template-haskell)
+    -- wild guess - template-haskell seems to follow the "even-minors" convention,
+    -- so put 2.6 as upper version bound.
     build-depends:      template-haskell >=2.4 && <2.6
     cpp-options:        -DNEW_TEMPLATE_HASKELL
   else
