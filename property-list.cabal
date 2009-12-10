@@ -20,7 +20,7 @@ description:            Parser, data type and formatter for Apple's XML property
                         probably not build properly on the hackage site. 
                         As far as I know, though, that is the only reason
                         it fails. This version includes a hack to try to make
-                        it build on the site, triggered by the "HaXml_1_13" build flag.
+                        it build on the site, triggered by the HaXml_1_13 build flag.
 
 flag new-data-object
   description:          Use the new version of the data-object package (>= 0.0.2)
