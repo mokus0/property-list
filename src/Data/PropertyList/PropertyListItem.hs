@@ -294,7 +294,12 @@ $(  let types = ''Either : [mkTcName ("OneOf" ++ show n) | n <- [2..20]]
                 tyVars = map varT tyVarNames
                 typeWithVars = foldl appT (conT typeName) tyVars
                 
-                cxt = mapM (appT (conT ''PropertyListItem)) tyVars
+#ifdef NEW_TEMPLATE_HASKELL
+                preds = [classP ''PropertyListItem [tyVar] | tyVar <- tyVars]
+                context = cxt preds
+#else
+                context = mapM (appT (conT ''PropertyListItem)) tyVars
+#endif
                 inst = appT (conT ''PropertyListItem) typeWithVars
                 
                 pl = mkName "pl"
@@ -310,7 +315,7 @@ $(  let types = ''Either : [mkTcName ("OneOf" ++ show n) | n <- [2..20]]
                     | con <- conNames
                     ]
         
-            instanceD cxt inst whre
+            instanceD context inst whre
     in
     mapM mkInstance types
  )

@@ -20,6 +20,11 @@ flag new-data-object
                         Object type in previous versions.
   default:              True
 
+flag new-template-haskell
+  description:          Template Haskell 2.4 seems to have made the
+                        generated @PropertyListItem OneOfN@ instances break.
+                        So, detect it and deal with it.
+
 Library
   hs-source-dirs:       src
   exposed-modules:      Data.PropertyList
@@ -39,10 +44,15 @@ Library
                         old-locale,
                         pretty,
                         time,
-                        
-                        template-haskell,
                         th-fold
 
+  if flag(new-template-haskell)
+    build-depends:      template-haskell >=2.4 && <2.6
+    cpp-options:        -DNEW_TEMPLATE_HASKELL
+  else
+    build-depends:      template-haskell <2.4
+
+  
   if flag(new-data-object)
     build-depends:      data-object >= 0.0.2
     cpp-options:        -DNEW_DATA_OBJECT
