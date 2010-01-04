@@ -1,7 +1,19 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Data.PropertyList
     ( PropertyList
-    , PropertyList_
+    , PartialPropertyList
+    , PropertyListS(..)
     , UnparsedPlistItem(..)
+    
+    , PListAlgebra(..), PListCoalgebra(..)
+    , InitialPList(..), TerminalPList(..)
+    , fromPlist, toPlist
+    , completePropertyList
+    , completePropertyListBy, completePropertyListByM
+    
+    , readPropertyList
+    , showPropertyList
+    
     , readPropertyListFromFile
     , writePropertyListToFile
     
@@ -15,11 +27,36 @@ import Data.PropertyList.Object ({- instances -})
 
 import Data.PropertyList.PropertyListItem
 
-readPropertyListFromFile :: FilePath -> IO (Either String PropertyList)
+readPropertyList :: (PListCoalgebra f PlistItem, TerminalPList f pl) => String -> Either String pl
+readPropertyList = fmap (toPlist . plistToPlistItem) . readPlist
+
+showPropertyList :: (InitialPList f pl, PListAlgebra f PlistItem) => pl -> String
+showPropertyList = showXml . fromPlist
+
+-- |Read an XML propertylist from a file in the xml1 plist format to a
+-- propertylist type which is terminal for the liftings supported by
+-- 'PlistItem'  (such as @'PartialPropertyList' 'UnparsedPlistItem'@
+-- or @'PartialPropertyList' 'PlistItem'@).
+-- 
+-- The 'TerminalPList' constraint is given to force a choice of lifting
+-- for the property list coalgebra, since the lifting is not exposed in
+-- this function's type.
+readPropertyListFromFile
+  :: (PListCoalgebra f PlistItem, TerminalPList f pl) =>
+     FilePath -> IO (Either String pl)
 readPropertyListFromFile file = do
         x <- readPlistFromFile file
-        return (fmap plistToPropertyList x)
+        return (fmap (toPlist . plistToPlistItem) x)
 
-writePropertyListToFile :: FilePath -> PropertyList -> IO ()
+-- |Output a propertylist to a file in the xml1 plist format from an
+-- initial propertylist type  (such as 'PropertyList', @'PartialPropertyList'
+-- 'UnparsedPlistItem'@, or @'PartialPropertyList' 'PlistItem'@).
+-- 
+-- The 'InitialPList' constraint is given to force a choice of lifting
+-- for the property list algebra, since the lifting is not exposed in
+-- this function's type.
+writePropertyListToFile
+  :: (InitialPList f pl, PListAlgebra f PlistItem) =>
+     FilePath -> pl -> IO ()
 writePropertyListToFile file plist = do
-        writePlistToFile file (propertyListToPlist unparsedPlistItemToPlistItem plist)
+        writePlistToFile file (fromPlist plist)

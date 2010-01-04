@@ -1,5 +1,5 @@
 name:                   property-list
-version:                0.0.0.7
+version:                0.0.1.0
 stability:              experimental
 license:                PublicDomain
 
@@ -13,14 +13,6 @@ homepage:               http://code.haskell.org/~mokus/property-list
 category:               Data, Parsing, XML
 synopsis:               XML property list parser
 description:            Parser, data type and formatter for Apple's XML property list 1.0 format.
-                        
-                        The bytestring-0.9.1.5 update on hackage seems to have 
-                        cratered the build for many packages, including the last
-                        several versions of this one, so this version will
-                        probably not build properly on the hackage site. 
-                        As far as I know, though, that is the only reason
-                        it fails. This version includes a hack to try to make
-                        it build on the site, triggered by the HaXml_1_13 build flag.
 
 flag new-data-object
   description:          Use the new version of the data-object package (>= 0.0.2)
@@ -64,6 +56,7 @@ Library
   build-depends:        base >= 3 && <5,
                         bytestring,
                         bytestring-class,
+                        category-extras,
                         containers, 
                         dataenc,
                         mtl,
