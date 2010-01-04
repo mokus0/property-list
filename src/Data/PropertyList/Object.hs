@@ -8,16 +8,13 @@ module Data.PropertyList.Object ({- instances only -}) where
 
 import Data.Object
 import Data.PropertyList.Type
-import Data.PropertyList.Parse
 import Data.PropertyList.Xml
 import qualified Data.Map as M
 import Control.Functor.Pointed
-import Control.Monad
 import Control.Monad.Identity
-import Control.Monad.Error
 
 instance ToScalar UnparsedPlistItem where
-    toScalar = toScalar . showXml . plistItemToPlist . unparsedPlistItemToPlistItem
+    toScalar = toScalar . showXmlPlist . plistItemToPlist . unparsedPlistItemToPlistItem
 instance ToObject UnparsedPlistItem where
     toObject = Scalar . toScalar
 

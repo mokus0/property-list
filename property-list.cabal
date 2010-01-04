@@ -47,10 +47,13 @@ flag HaXml_1_13
 
 Library
   hs-source-dirs:       src
+  ghc-options:          -fwarn-unused-binds -fwarn-unused-imports
   exposed-modules:      Data.PropertyList
-  other-modules:        Data.PropertyList.Xml
+                        Data.PropertyList.Xml
+                        
+  other-modules:        Data.PropertyList.Xml.Parse
+                        Data.PropertyList.Xml.Types
                         Data.PropertyList.Type
-                        Data.PropertyList.Parse
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.Object
   build-depends:        base >= 3 && <5,

@@ -1,102 +1,73 @@
 {-# LANGUAGE
-        TemplateHaskell, CPP
+        FlexibleContexts
   #-}
+module Data.PropertyList.Xml
+    ( Plist
+    , readXmlPlist, showXmlPlist
+    
+    , PlistItem
+    , plistToPlistItem, plistItemToPlist
+    
+    , UnparsedPlistItem(..)
+    , unparsedPlistItemToPlistItem
 
-module Data.PropertyList.Xml where
+    , readXmlPropertyList, showXmlPropertyList
+    , readXmlPlistFromFile, writeXmlPlistToFile
+    , readXmlPropertyListFromFile, writeXmlPropertyListToFile
+    
+    ) where
 
-import Prelude as P
+import Data.PropertyList.Type
+import Data.PropertyList.Xml.Parse
+import Data.PropertyList.Xml.Types
 
-import Text.XML.HaXml.OneOfN
+-- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from 'String's
 
-#ifdef HaXml_1_13
-import Data.PropertyList.Xml.Dtd_1_13 as X
-import Text.XML.HaXml.Xml2Haskell hiding (showXml, readXml)
-import qualified Text.XML.HaXml.Xml2Haskell as X2H
-#else
-import Data.PropertyList.Xml.Dtd as X
-import Text.XML.HaXml.XmlContent
-        hiding (showXml, toXml)
-#endif
+readXmlPropertyList :: (PListCoalgebra f PlistItem, TerminalPList f pl) => String -> Either String pl
+readXmlPropertyList = fmap (toPlist . plistToPlistItem) . readXmlPlist
 
-import Text.PrettyPrint.HughesPJ (render)
-import Text.XML.HaXml.Pretty   (document)
-import Text.XML.HaXml.Types
+showXmlPropertyList :: (InitialPList f pl, PListAlgebra f PlistItem) => pl -> String
+showXmlPropertyList = showXmlPlist . fromPlist
 
-import Language.Haskell.TH.Fold
 
-type PlistItem = OneOf9 Array Data Date Dict AReal AInteger AString X.True X.False
+-- * Reading and writing XML 'Plist's from files
 
-readPlist :: String -> Either String Plist
-readPlist = readXml
-
-readPlistFromFile :: FilePath -> IO (Either String Plist)
-readPlistFromFile path = do
+readXmlPlistFromFile :: FilePath -> IO (Either String Plist)
+readXmlPlistFromFile path = do
         contents <- readFile path
-        return (readXml contents)
+        return (readXmlPlist contents)
 
-writePlistToFile :: FilePath -> Plist -> IO ()
-writePlistToFile path plist = do
-        writeFile path (showXml plist)
+writeXmlPlistToFile :: FilePath -> Plist -> IO ()
+writeXmlPlistToFile path plist = do
+        writeFile path (showXmlPlist plist)
 
-#ifdef HaXml_1_13
 
-readXml :: String -> Either String Plist
-readXml xml = case X2H.readXml xml of
-    Nothing     -> Left "readXml: parse failed"
-    Just plist  -> Right plist
+-- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from files
 
-showXml :: Plist -> String
-showXml = X2H.showXml
+-- |Read an XML propertylist from a file in the xml1 plist format to a
+-- propertylist type which is terminal for the liftings supported by
+-- 'PlistItem'  (such as @'PartialPropertyList' 'UnparsedPlistItem'@
+-- or @'PartialPropertyList' 'PlistItem'@).
+-- 
+-- The 'TerminalPList' constraint is given to force a choice of lifting
+-- for the property list coalgebra, since the lifting is not exposed in
+-- this function's type.
+readXmlPropertyListFromFile
+  :: (PListCoalgebra f PlistItem, TerminalPList f pl) =>
+     FilePath -> IO (Either String pl)
+readXmlPropertyListFromFile file = do
+        x <- readXmlPlistFromFile file
+        return (fmap (toPlist . plistToPlistItem) x)
 
-toXml :: Plist -> Document
-toXml value =
-    Document (Prolog (Just (XMLDecl "1.0" Nothing Nothing)) [] Nothing [])
-             emptyST
-             ( case (toElem value) of
-                 [CElem e] -> e
-                 )
-             []
-
-#else
-
--- | Convert a fully-typed XML document to a string (without DTD).
-showXml :: Plist -> String
-showXml x =
-    case toContents x of
-      [CElem _ _] -> (render . document . toXml) x
-      _ -> ""
-
-toXml :: Plist -> Document ()
-toXml value =
-    Document (Prolog (Just (XMLDecl "1.0" Nothing Nothing)) [] Nothing [])
-             emptyST
-             ( case (toContents value) of
-                 [CElem e ()] -> e
-                 )
-             []
-
-#endif
-
-plistToPlistItem :: Plist -> PlistItem
-plistToPlistItem = $(fold ''Plist)
-        (\attr -> OneOf9  )
-        (\attr -> TwoOf9  )
-        (\attr -> ThreeOf9)
-        (\attr -> FourOf9 )
-        (\attr -> FiveOf9 )
-        (\attr -> SixOf9  )
-        (\attr -> SevenOf9)
-        (\attr -> EightOf9)
-        (\attr -> NineOf9 )
-
-plistItemToPlist = $(fold ''OneOf9)
-        (PlistArray    attr)
-        (PlistData     attr)
-        (PlistDate     attr)
-        (PlistDict     attr)
-        (PlistAReal    attr)
-        (PlistAInteger attr)
-        (PlistAString  attr)
-        (PlistTrue     attr)
-        (PlistFalse    attr)
-        where attr = fromAttrs []
+-- |Output a propertylist to a file in the xml1 plist format from an
+-- initial propertylist type  (such as 'PropertyList', @'PartialPropertyList'
+-- 'UnparsedPlistItem'@, or @'PartialPropertyList' 'PlistItem'@).
+-- 
+-- The 'InitialPList' constraint is given to force a choice of lifting
+-- for the property list algebra, since the lifting is not exposed in
+-- this function's type.
+writeXmlPropertyListToFile
+  :: (InitialPList f pl, PListAlgebra f PlistItem) =>
+     FilePath -> pl -> IO ()
+writeXmlPropertyListToFile file plist = do
+        writeXmlPlistToFile file (fromPlist plist)

@@ -5,7 +5,7 @@
     UndecidableInstances, OverlappingInstances, IncoherentInstances
   #-}
 
-module Data.PropertyList.Parse where
+module Data.PropertyList.Xml.Parse where
 
 import Language.Haskell.TH.Fold
 
@@ -14,11 +14,10 @@ import Prelude as P
 import Data.PropertyList.Xml.Dtd_1_13 as X
 #else
 import Data.PropertyList.Xml.Dtd as X
-import Text.XML.HaXml.XmlContent
 #endif
 
-import Data.PropertyList.Xml
 import Data.PropertyList.Type
+import Data.PropertyList.Xml.Types
 
 import Control.Functor.Pointed
 import Control.Arrow ((+++))
