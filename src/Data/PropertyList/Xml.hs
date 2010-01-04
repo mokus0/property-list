@@ -17,7 +17,7 @@ module Data.PropertyList.Xml
     
     ) where
 
-import Data.PropertyList.Type
+import Data.PropertyList.Algebra
 import Data.PropertyList.Xml.Parse
 import Data.PropertyList.Xml.Types
 

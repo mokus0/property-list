@@ -20,7 +20,8 @@ module Data.PropertyList
     , module Data.PropertyList.PropertyListItem
     ) where
 
-import Data.PropertyList.Type
+import Data.PropertyList.Algebra
+import Data.PropertyList.Types
 import Data.PropertyList.Xml
 import Data.PropertyList.Object ({- instances -})
 

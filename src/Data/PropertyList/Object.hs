@@ -6,9 +6,11 @@
   #-}
 module Data.PropertyList.Object ({- instances only -}) where
 
-import Data.Object
-import Data.PropertyList.Type
+import Data.PropertyList.Algebra
+import Data.PropertyList.Types
 import Data.PropertyList.Xml
+
+import Data.Object
 import qualified Data.Map as M
 import Control.Functor.Pointed
 import Control.Monad.Identity

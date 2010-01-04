@@ -13,7 +13,7 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH.Fold
 
-import Data.PropertyList.Type
+import Data.PropertyList.Types
 
 import qualified Data.Map as M
 import Data.ByteString (ByteString)

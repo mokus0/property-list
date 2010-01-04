@@ -51,11 +51,12 @@ Library
   exposed-modules:      Data.PropertyList
                         Data.PropertyList.Xml
                         
-  other-modules:        Data.PropertyList.Xml.Parse
-                        Data.PropertyList.Xml.Types
-                        Data.PropertyList.Type
+  other-modules:        Data.PropertyList.Algebra
+                        Data.PropertyList.Types
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.Object
+                        Data.PropertyList.Xml.Parse
+                        Data.PropertyList.Xml.Types
   build-depends:        base >= 3 && <5,
                         bytestring,
                         bytestring-class,

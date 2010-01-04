@@ -16,7 +16,7 @@ import Data.PropertyList.Xml.Dtd_1_13 as X
 import Data.PropertyList.Xml.Dtd as X
 #endif
 
-import Data.PropertyList.Type
+import Data.PropertyList.Algebra
 import Data.PropertyList.Xml.Types
 
 import Control.Functor.Pointed
