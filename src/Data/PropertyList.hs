@@ -11,7 +11,7 @@ module Data.PropertyList
 import Data.PropertyList.Type
 import Data.PropertyList.Parse
 import Data.PropertyList.Xml
-import Data.PropertyList.Object ({- ToObject instances -})
+import Data.PropertyList.Object ({- instances -})
 
 import Data.PropertyList.PropertyListItem
 
