@@ -46,12 +46,6 @@ data UnparsedPlistItem
 dateFormat :: String
 dateFormat = "%FT%TZ"
 
-instance PListAlgebra f PlistItem => PListAlgebra f Plist where
-    {-# SPECIALIZE instance PListAlgebra Identity Plist #-}
-    {-# SPECIALIZE instance PListAlgebra (Either PlistItem) Plist #-}
-    {-# SPECIALIZE instance PListAlgebra (Either UnparsedPlistItem) Plist #-}
-    plistAlgebra =  plistItemToPlist . plistAlgebra . fmap (fmap plistToPlistItem)
-
 instance Copointed f => PListAlgebra f PlistItem where
     {-# SPECIALIZE instance PListAlgebra Identity PlistItem #-}
     plistAlgebra = foldPropertyListS

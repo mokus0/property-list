@@ -27,7 +27,7 @@ readXmlPropertyList :: (PListCoalgebra f PlistItem, TerminalPList f pl) => Strin
 readXmlPropertyList = fmap (toPlist . plistToPlistItem) . readXmlPlist
 
 showXmlPropertyList :: (InitialPList f pl, PListAlgebra f PlistItem) => pl -> String
-showXmlPropertyList = showXmlPlist . fromPlist
+showXmlPropertyList = showXmlPlist . plistItemToPlist . fromPlist
 
 
 -- * Reading and writing XML 'Plist's from files
@@ -70,4 +70,4 @@ writeXmlPropertyListToFile
   :: (InitialPList f pl, PListAlgebra f PlistItem) =>
      FilePath -> pl -> IO ()
 writeXmlPropertyListToFile file plist = do
-        writeXmlPlistToFile file (fromPlist plist)
+        writeXmlPlistToFile file (plistItemToPlist (fromPlist plist))
