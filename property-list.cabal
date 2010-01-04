@@ -80,9 +80,8 @@ Library
   else
     build-depends:      template-haskell <2.4
 
-  
   if flag(new-data-object)
-    build-depends:      data-object >= 0.0.2
+    build-depends:      data-object >= 0.0.2 && < 0.2.0
     cpp-options:        -DNEW_DATA_OBJECT
   else
     build-depends:      data-object <  0.0.2
