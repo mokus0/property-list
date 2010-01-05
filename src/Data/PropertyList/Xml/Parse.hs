@@ -46,6 +46,11 @@ data UnparsedPlistItem
 dateFormat :: String
 dateFormat = "%FT%TZ"
 
+-- This instance is not efficient, and should really only be used as a convenience
+-- to allow direct construction of 'Plist's using the \"smart constructors\"
+instance PListAlgebra f PlistItem => PListAlgebra f Plist where
+    plistAlgebra = plistItemToPlist . plistAlgebra . fmap (fmap plistToPlistItem)
+
 instance Copointed f => PListAlgebra f PlistItem where
     {-# SPECIALIZE instance PListAlgebra Identity PlistItem #-}
     plistAlgebra = foldPropertyListS
@@ -98,6 +103,14 @@ instance PListCoalgebra (Either UnparsedPlistItem) PlistItem where
 
 instance PListCoalgebra (Either PlistItem) PlistItem where
     plistCoalgebra = (unparsedPlistItemToPlistItem +++ id) . plistCoalgebra
+
+instance PListCoalgebra Maybe PlistItem where
+    plistCoalgebra = either (const Nothing) Just . (plistCoalgebra :: PlistItem -> Either PlistItem (PropertyListS PlistItem))
+
+-- This instance is not efficient, and should really only be used as a convenience
+-- to allow direct deconstruction of 'Plist's using the \"view deconstructors\"
+instance PListCoalgebra f PlistItem => PListCoalgebra f Plist where
+    plistCoalgebra = fmap (fmap plistItemToPlist) . plistCoalgebra . plistToPlistItem
 
 unparsedPlistItemToPlistItem :: UnparsedPlistItem -> PlistItem
 unparsedPlistItemToPlistItem = $(fold ''UnparsedPlistItem)

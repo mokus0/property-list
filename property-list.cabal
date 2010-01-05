@@ -49,11 +49,12 @@ Library
   hs-source-dirs:       src
   ghc-options:          -fwarn-unused-binds -fwarn-unused-imports
   exposed-modules:      Data.PropertyList
+                        Data.PropertyList.Algebra
                         Data.PropertyList.Xml
                         
-  other-modules:        Data.PropertyList.Algebra
-                        Data.PropertyList.Types
+  other-modules:        Data.PropertyList.Types
                         Data.PropertyList.PropertyListItem
+                        Data.PropertyList.KeyPath
                         Data.PropertyList.Object
                         Data.PropertyList.Xml.Parse
                         Data.PropertyList.Xml.Types
