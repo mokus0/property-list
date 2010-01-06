@@ -112,6 +112,8 @@ instance PListCoalgebra Maybe PlistItem where
 instance PListCoalgebra f PlistItem => PListCoalgebra f Plist where
     plistCoalgebra = fmap (fmap plistItemToPlist) . plistCoalgebra . plistToPlistItem
 
+-- |Take the unparsed data from an 'UnparsedPlistItem' and wrap it in
+-- the appropriate 'PlistItem' constructor.
 unparsedPlistItemToPlistItem :: UnparsedPlistItem -> PlistItem
 unparsedPlistItemToPlistItem = $(fold ''UnparsedPlistItem)
         (TwoOf9   . Data    )

@@ -28,11 +28,13 @@ import Control.Monad.Error ({- instance Monad (Either String) -})
 
 -- * Reading and writing XML 'Plist's from files
 
+-- |Try to parse a 'Plist' from an XML property-list file.
 readXmlPlistFromFile :: FilePath -> IO (Either String Plist)
 readXmlPlistFromFile path = do
         contents <- readFile path
         return (readXmlPlist contents)
 
+-- |Try to write a 'Plist' to an XML property-list file.
 writeXmlPlistToFile :: FilePath -> Plist -> IO ()
 writeXmlPlistToFile path plist = do
         writeFile path (showXmlPlist plist)

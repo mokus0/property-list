@@ -29,8 +29,14 @@ import Text.XML.HaXml.Types
 import Language.Haskell.TH.Fold
 
 -- * The 'PlistItem' type: Xml-parser-independent view of an xml plist
+-- |'PlistItem' is nearly equivalent to 'Plist' - the difference is that it discards
+-- information about where in the tree the item is (a 'Plist' represents the whole
+-- XML tree starting from the root).  This is a \"slightly-less-opaque\" type,
+-- but still isn't really intended for consumption by end users.
 type PlistItem = OneOf9 Array Data Date Dict AReal AInteger AString X.True X.False
 
+-- |Convert a 'Plist' to a 'PlistItem', discarding the root element and any 
+-- attributes that element may have had.
 plistToPlistItem :: Plist -> PlistItem
 plistToPlistItem = $(fold ''Plist)
         (\attr -> OneOf9  )
@@ -43,6 +49,8 @@ plistToPlistItem = $(fold ''Plist)
         (\attr -> EightOf9)
         (\attr -> NineOf9 )
 
+-- |Convert a 'PlistItem' to a 'Plist', giving it a root element with no 
+-- attributes.
 plistItemToPlist :: PlistItem -> Plist
 plistItemToPlist = $(fold ''OneOf9)
         (PlistArray    attr)
@@ -60,14 +68,18 @@ plistItemToPlist = $(fold ''OneOf9)
 
 #ifdef HaXml_1_13
 
+-- |Try to parse a string as an XML property list.
 readXmlPlist :: String -> Either String Plist
 readXmlPlist xml = case X2H.readXml xml of
     Nothing     -> Left "readXml: parse failed"
     Just plist  -> Right plist
 
+-- |Render a 'Plist' to a 'String' as an XML property list.
 showXmlPlist :: Plist -> String
 showXmlPlist = X2H.showXml
 
+-- |Render a 'Plist' as a 'Document' (HaXml's internal DOM representation, I
+-- think)
 toXml :: Plist -> Document
 toXml value =
     Document (Prolog (Just (XMLDecl "1.0" Nothing Nothing)) [] Nothing [])
@@ -79,16 +91,19 @@ toXml value =
 
 #else
 
+-- |Try to parse a string as an XML property list.
 readXmlPlist :: String -> Either String Plist
 readXmlPlist = readXml
 
--- | Convert a fully-typed XML document to a string (without DTD).
+-- |Render a 'Plist' to a 'String' as an XML property list.
 showXmlPlist :: Plist -> String
 showXmlPlist x =
     case toContents x of
       [CElem _ _] -> (render . document . toXml) x
       _ -> ""
 
+-- |Render a 'Plist' as a 'Document' (HaXml's internal DOM representation, I
+-- think)
 toXml :: Plist -> Document ()
 toXml value =
     Document (Prolog (Just (XMLDecl "1.0" Nothing Nothing)) [] Nothing [])

@@ -12,6 +12,11 @@ import Text.XML.HaXml.OneOfN
 
 {-Type decls-}
 
+-- |DtdToHaskell-generated type representing XML trees that match the PropertyList-1.0 dtd.
+-- This is an opaque representation of a structurally-sound property list
+-- which might still contain invalid data.  End users should never need to
+-- use this type, but if they do, it can be manipulated with the constructors
+-- and deconstructors in "Data.PropertyList.Algebra".
 data Plist = PlistArray Plist_Attrs Array
            | PlistData Plist_Attrs Data
            | PlistDate Plist_Attrs Date
