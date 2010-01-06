@@ -121,7 +121,6 @@ module Data.PropertyList
 import Data.PropertyList.Algebra
 import Data.PropertyList.Types
 import Data.PropertyList.Xml
-import Data.PropertyList.Object ({- instances -})
 
 import Data.PropertyList.PropertyListItem
 import Data.PropertyList.KeyPath

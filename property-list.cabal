@@ -55,7 +55,6 @@ Library
   other-modules:        Data.PropertyList.Types
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.KeyPath
-                        Data.PropertyList.Object
                         Data.PropertyList.Xml.Parse
                         Data.PropertyList.Xml.Types
   build-depends:        base >= 3 && <5,
@@ -67,30 +66,18 @@ Library
                         mtl,
                         old-locale,
                         pretty,
+                        template-haskell,
                         time,
                         th-fold
-
-  if flag(new-template-haskell)
-    -- wild guess - template-haskell seems to follow the "even-minors" convention,
-    -- so put 2.6 as upper version bound.
-    build-depends:      template-haskell >=2.4 && <2.6
-    cpp-options:        -DNEW_TEMPLATE_HASKELL
-  else
-    build-depends:      template-haskell <2.4
-
-  if flag(new-data-object)
-    build-depends:      data-object >= 0.0.2 && < 0.2.0
-    cpp-options:        -DNEW_DATA_OBJECT
-  else
-    build-depends:      data-object <  0.0.2
 
   if flag(HaXml_1_13)
     other-modules:      Data.PropertyList.Xml.Dtd_1_13
     cpp-options:        -DHaXml_1_13
-    build-depends:      HaXml >= 1.13 && <1.14,
+    build-depends:      HaXml >= 1.13 && <1.14
+    
+    if impl(ghc >= 6.10 && < 6.11)
                         bytestring == 0.9.1.4,
                         bytestring-class == 0.0.0,
-                        data-object == 0.0.2,
                         
                         utf8-string == 0.3.5
                         -- (transitive dependency brought in by bytestring-class)

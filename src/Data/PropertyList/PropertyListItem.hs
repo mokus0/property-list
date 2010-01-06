@@ -29,8 +29,6 @@ import Text.XML.HaXml.OneOfN
 import Control.Monad
 import qualified Data.Traversable as Traversable
 
-import Data.Object
-
 -- * some local utility functions
 
 -- try to read a string to some other format using the Read instance
@@ -160,27 +158,6 @@ instance PropertyListItem Bool where
         = Just False
     fromPropertyList _ = Nothing
 
--- |Note that due to 'Object''s use of 'Lazy.ByteString's, scalars become data, not strings.
--- Using @GenObject key String@ instead of 'Object' will cause scalars to be encoded as plist strings.
-#ifdef NEW_DATA_OBJECT
-instance (PropertyListItem val, LazyByteString key) => PropertyListItem (GenObject key val) where
-#else
-instance PropertyListItem Object where
-#endif
-    toPropertyList (Mapping  m) = toPropertyList (M.fromList [(toStr k, v) | (k,v) <- m])
-        where toStr = unpack . toLazyByteString
-    toPropertyList (Sequence s) = toPropertyList s
-    toPropertyList (Scalar   s) = toPropertyList s
-    
-    fromPropertyList plist = msum
-        [ do
-            m <- fromPropertyList plist
-            let fromStr = fromLazyByteString . pack
-            return (Mapping [(fromStr k, v) | (k,v) <- M.assocs m])
-        , fmap Sequence (fromPropertyList plist)
-        , fmap Scalar   (fromPropertyList plist)
-        ]
-
 -- The following TH generates, for Either and for all OneOfN types
 --  (N in [2..20]), an instance of the form:
 -- 
@@ -207,7 +184,7 @@ $(  let types = ''Either : [mkTcName ("OneOf" ++ show n) | n <- [2..20]]
                 tyVars = map varT tyVarNames
                 typeWithVars = foldl appT (conT typeName) tyVars
                 
-#ifdef NEW_TEMPLATE_HASKELL
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
                 preds = [classP ''PropertyListItem [tyVar] | tyVar <- tyVars]
                 context = cxt preds
 #else
