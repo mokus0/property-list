@@ -4,20 +4,30 @@
     FlexibleContexts
   #-}
 
--- |The interface of this module is very heavily influenced by category-theoretical
--- constructions.  In particular, F-algebras and F-coalgebras, initiality, and
--- terminality.
+-- |The internal \"algebraic\" interface for working with property-list-like
+-- things.  The classes defined here are the basis for a very general system
+-- supporting transformations between many property-list representations,
+-- including both internal and external formats.  The transformations are
+-- based on algebra and are very well-behaved mathematically.  It is possible
+-- to \"fuse\" operations so that, for example, reading from XML and writing
+-- to a text plist can be done without creating any intermediate 
+-- representations other than those used by the XML parser and the text 
+-- renderer.  Or, expressions using the \"smart constructors\" can be
+-- evaluated to directly synthesize XML-formatted plists, or the view-pattern
+-- destructors can be used to directly analyze them.
 -- 
--- For those not familiar with these concepts, this will probably be quite
--- incomprehensible.  Sorry about that.  The basic idea, though, is the use of
--- the 'PropertyListS' type as a sort of a central junction point through which
--- all conversions between property-list-like types and property-list-item 
--- types are routed.  The classes defined here are chosen to minimize the
--- inderdependence of these types and hence maximize the flexibility of the
--- system as a whole.
+-- The interface defined in this module is very heavily influenced by 
+-- category-theoretical constructions.  In particular, F-algebras and 
+-- F-coalgebras, initiality, and terminality.  For those not familiar with
+-- these concepts, this will probably be quite incomprehensible.  Sorry
+-- about that.  The basic idea, though, is the use of the 'PropertyListS' 
+-- type as a sort of a central junction point through which all conversions
+-- between property-list-like types and property-list-item types are routed.
+-- The classes defined here are chosen to minimize the inderdependence of
+-- these types and hence maximize the flexibility of the system as a whole.
 --
--- Even more simply stated, these weird math thingies make the design
--- as flexible as possible.
+-- More simply stated, these weird math thingies make the design
+-- as flexible as possible (in a well-defined and useful sense).
 module Data.PropertyList.Algebra where
 
 import Control.Applicative
@@ -32,7 +42,7 @@ import qualified Data.Map as M
 import Data.ByteString as B hiding (map)
 import Data.Time
 
--- * The 'PropertyListS' signature type
+-- * The signature type ('PropertyListS')
 
 -- |The signature of the base property list algebra.  This algebra is 
 -- \"lifted\" in various ways to support several different but similar
@@ -47,7 +57,10 @@ import Data.Time
 -- is to say, any other type with an algebra for this signature (such as an 
 -- XML representation) can be made from a 'PropertyList', and any type with
 -- a coalgebra for this signature (such as a 'String', an 'Integer', etc.)
--- can be converted directly to a 'PropertyList'.
+-- can be converted directly to a 'PropertyList'.  This also means that any
+-- transformation or series of transformations involving the 'PropertyList'
+-- type can be fused to \"skip\" generating intermediate property lists, 
+-- although there are currently no rewrite rules set up to do so.
 --
 -- Similarly, 'PartialPropertyList' is a fixed point of an arbitrarily-
 -- augmented version of this signature (also known as the free monad 
@@ -92,10 +105,18 @@ instance Traversable PropertyListS where
 
 -- * The algebra and coalgebra classes
 
--- |A class for types with chosen lifted property list algebra.
--- The lifting is provided to support extending the algebra.  It is provided
--- in a class because most of the time for any given type there is only
--- one algebra you care about.
+-- |A class for types which can be constructed algebraically from the
+-- 'PropertyListS' signature (lifted by @f@) - in other words, types which
+-- you can put property lists into.
+-- 
+-- The @f@-lifting is provided to support extending the algebra.  The algebra
+-- is defined in a class rather than passing around functions because most of
+-- the time for any given type there is only one algebra you care about.
+--
+-- Typically a renderer for an output format will be implemented as a type
+-- with an @instance 'PListAlgebra' 'Identity'@.  For example, the XML 
+-- output system is implemented in the @instance 'PListAlgebra' 'Identity' 
+-- 'Data.PropertyList.Xml.Types.Plist'@.
 class Functor f => PListAlgebra f a where
     -- |Build a value of type @a@ from a piece of a property list (using
     -- the 'PropertyListS' signature augmented by the \"lifting\" @f@).
@@ -146,8 +167,18 @@ fromPlistWith lift = fold
     where
         fold = plistAlgebra . lift . fmap (fmap fold) . plistCoalgebra
 
--- |A class for types with chosen lifted property list coalgebra.
--- The lifting is provided to support extending the coalgebra.
+-- |A class for types which can be dissected (pattern-matched) into the
+-- 'PropertyListS' signature (lifted by @f@) - in other words, types which
+-- you can take property lists out of.
+--
+-- Typically a property list parser will be implemented as a type with a
+-- 'PListCoalgebra' instance, where @f@ is either 'Identity' in the case where
+-- the parser guarantees to return a fully well-formed property list 
+-- (assuming it returns anything at all) or 'Either' @something@ when the 
+-- parser only guarantees that the structure is sound (but that some elements
+-- might be defective, in which case a value of type @something@ would be 
+-- substituted).  The XML parser, for example, is based on the latter 
+-- approach, where @something@ is 'UnparsedPlistItem'.
 class Functor f => PListCoalgebra f a where
     -- |Analyze a value of type @a@ by matching it to a constructor in the
     -- (lifted by @f@) 'PropertyListS' signature.
