@@ -19,15 +19,18 @@ import Data.PropertyList.Types
 import qualified Data.Map as M
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as Lazy (ByteString)
-import Data.ByteString.Lazy.Char8 (pack, unpack)
 import Data.ByteString.Class
 import Data.Time
 import Data.Char
+import Data.Int
+import Data.Word
 
 import Text.XML.HaXml.OneOfN
 
 import Control.Monad
+import Control.Monad.Identity
 import qualified Data.Traversable as Traversable
+import Data.Generics
 
 -- * some local utility functions
 
@@ -131,16 +134,31 @@ instance PropertyListItem Float where
     toPropertyList = toPropertyList . (realToFrac :: Float -> Double)
     fromPropertyList = fmap (realToFrac :: Double -> Float) . fromPropertyList
 
-instance PropertyListItem Integer where
-    toPropertyList = plInt
-    fromPropertyList (fromPlInt    -> Just i) = Just i
-    fromPropertyList (fromPlReal   -> Just d) = tryToIntegral d
-    fromPropertyList (fromPlString -> Just s) = tryRead s
-    fromPropertyList _ = Nothing
-
-instance PropertyListItem Int where
-    toPropertyList = toPropertyList . toInteger
-    fromPropertyList = fmap fromInteger . fromPropertyList
+-- this little bit of Template Haskell replicates the embedded instance
+-- to many other integral types (by using SYB generics to replace every
+-- occurrence of ''Integer in the declarations' template-haskell representation
+-- with each other type's name)
+$( do
+    decls <- [d|
+            instance PropertyListItem Integer where
+                toPropertyList = plInt . fromIntegral
+                fromPropertyList pl = case runIdentity (plistCoalgebra pl) of 
+                    PLInt  i    -> Just (fromIntegral i)
+                    PLReal d    -> tryToIntegral d
+                    PLString s  -> tryRead s
+                    _           -> Nothing
+        |]
+    sequence
+        [ everywhereM (mkM (return . replace)) dec
+        | t <-  [''Integer, ''Int,
+                 ''Int8,  ''Int16,  ''Int32,  ''Int64, 
+                 ''Word8, ''Word16, ''Word32, ''Word64]
+        , dec <- decls
+        , let replace name
+                | name  == ''Integer    = t
+                | otherwise             = name
+        ]
+ )
 
 -- this instance doesnt make much sense by itself, but must be here to support strings
 instance PropertyListItem Char where
