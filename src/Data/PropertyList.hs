@@ -97,9 +97,9 @@ module Data.PropertyList
     -- 
     --      (returns @Just True@)
     -- 
-    -- > getItemAtKeyPath ["subDict"] (Just myPlist) :: M.Map String String
+    -- > getItemAtKeyPath ["subDict"] (Just myPlist) :: Maybe (M.Map String String)
     -- 
-    --      (returns @M.fromList [(\"item 1\", \"This is item 1!\"), (\"item B\", \"YES\")]@.  
+    --      (returns @Just (M.fromList [(\"item 1\", \"This is item 1!\"), (\"item B\", \"YES\")])@.  
     --       Note the stringification of non-string items.  In general, 'PropertyListItem'
     --       instances are expected to do \"reasonable\" conversions to try and make sense
     --       of what the user is asking the system to do.)
