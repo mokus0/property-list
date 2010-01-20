@@ -212,10 +212,9 @@ $(  let types = ''Either : [mkTcName ("OneOf" ++ show n) | n <- [2..20]]
                 typeWithVars = foldl appT (conT typeName) tyVars
                 
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
-                preds = [classP ''PropertyListItem [tyVar] | tyVar <- tyVars]
-                context = cxt preds
+                context = cxt [classP ''PropertyListItem [tyVar]    | tyVar <- tyVars]
 #else
-                context = mapM (appT (conT ''PropertyListItem)) tyVars
+                context = cxt [appT (conT ''PropertyListItem) tyVar | tyVar <- tyVars]
 #endif
                 inst = appT (conT ''PropertyListItem) typeWithVars
                 
