@@ -57,7 +57,7 @@ tryToIntegral d = case properFraction d of
 --
 -- The algebraic interface also cannot work for arrays or dictionaries,
 -- because it only allows primitive (co-)recursion - the conversions can only
--- operate on one "layer" of 'PropertyListS' at a time.  This could be 
+-- operate on one \"layer\" of 'PropertyListS' at a time.  This could be 
 -- handled by enlarging the types (from [t] to Either t [t], for example)
 -- or by encoding in-band (by taking a singleton list to be an element 
 -- instead of a list, for example), but both of those \"solutions\" create
