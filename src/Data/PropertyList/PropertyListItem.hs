@@ -48,11 +48,6 @@ tryToIntegral d = case properFraction d of
     (i, 0) -> Just i
     _ -> Nothing
 
---
---fmapM f m = fmap M.fromList $ 
---    sequence [ do { v <- f v; return (k, v)}
---             | (k, v) <- M.toList m ]
-
 -- |A class for items which can be converted to and from property lists.  This
 -- is more general than 'PListAlgebra' and 'PListCoalgebra', in that it allows
 -- for transformations that are not primitive-recursive.  This relaxation is
