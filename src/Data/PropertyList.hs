@@ -52,10 +52,17 @@ module Data.PropertyList
     -- 
     -- Most users do not need to understand this stuff - the class names are
     -- only exported because they appear in the types of the constructors and
-    -- destructors.
+    -- destructors.  For more detailed info, see "Data.PropertyList.Algebra".
     , PListAlgebra, PListCoalgebra
     , InitialPList, TerminalPList
 
+    -- * Parsing and formatting property lists using any supported format
+    , readPropertyList
+    , showPropertyList
+    
+    , readPropertyListFromFile
+    , writePropertyListToFile
+    
     -- * Parsing and formatting property lists using the XML format
     , readXmlPropertyList
     , showXmlPropertyList
@@ -124,3 +131,24 @@ import Data.PropertyList.Xml
 
 import Data.PropertyList.PropertyListItem
 import Data.PropertyList.KeyPath
+
+-- | Read a property list from a 'String', trying all supported property list formats.
+-- Presently, only the \"XML1\" format is supported.  See also 'readXmlPropertyList'.
+readPropertyList :: String -> Either String PropertyList
+readPropertyList = readXmlPropertyList
+
+-- | Write a property list to a 'String', using a \"preferred\" property list format.
+-- Presently, that is the \"XML1\" format.  See also 'showXmlPropertyList'.
+showPropertyList :: PropertyList -> String
+showPropertyList = showXmlPropertyList
+
+-- | Read a property list from a file, trying all supported property list formats.
+-- Presently, only the \"XML1\" format is supported.  See also
+-- 'readXmlPropertyListFromFile'.
+readPropertyListFromFile :: FilePath -> IO PropertyList
+readPropertyListFromFile = readXmlPropertyListFromFile
+
+-- | Write a property list to a file, using a \"preferred\" property list format.
+-- Presently, that is the \"XML1\" format.  See also 'writeXmlPropertyListToFile'.
+writePropertyListToFile :: FilePath -> PropertyList -> IO ()
+writePropertyListToFile = writeXmlPropertyListToFile
