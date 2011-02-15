@@ -12,16 +12,17 @@ module Data.PropertyList.Types where
 
 import Data.PropertyList.Algebra
 
-import Control.Functor.Pointed
-import Control.Functor.Fix
-import Control.Applicative
-import Control.Monad.Identity
-import Control.Monad.Free
-import Data.Foldable (Foldable(foldMap))
-import Data.Traversable (Traversable(..))
-import Data.Void
+import Control.Applicative      (Applicative(..), WrappedMonad(..), (<$>))
+import Control.Functor.Fix      (FixF(..))
+import Control.Functor.Pointed  (Pointed(..), Copointed(..))
+import Control.Monad            (liftM, ap)
+import Control.Monad.Free       (Free(..), MonadFree(..), runFree)
+import Control.Monad.Identity   (Identity(..))
+import Data.Foldable            (Foldable(foldMap))
+import Data.Traversable         (Traversable(..))
+import Data.Void                (Void, void)
 
-import Unsafe.Coerce (unsafeCoerce) {- used _only_ to eliminate fmap traversals for newtype constructors -}
+import Unsafe.Coerce            (unsafeCoerce) {- used _only_ to eliminate fmap traversals for newtype constructors -}
 
 -- * The 'PropertyList' data type
 -- (the universal algebra/coalgebra for the unlifted signature)

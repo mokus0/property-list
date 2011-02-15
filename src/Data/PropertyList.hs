@@ -107,8 +107,9 @@ module Data.PropertyList
     -- > setItemAtKeyPath ["omg", "lolwut"] (Just "roflcopter") (Just myPlist)
     -- 
     --      (returns a modified version of @myPlist@ with 
-    --      @plDict $ M.fromList [(\"omg\", plDict $ M.fromList [(\"omg\", 
-    --       plDict $ M.fromList [(\"lolwut\", plString \"roflcopter\")])])]@
+    --      @plDict $ M.fromList [(\"omg\",
+    --         plDict $ M.fromList [(\"lolwut\",
+    --           plString \"roflcopter\")])]@
     --       added to the root dictionary)
     --
     -- > setItemAtKeyPath ["foo"] Nothing (Just myPlist)

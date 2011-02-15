@@ -1,5 +1,5 @@
 name:                   property-list
-version:                0.0.1.0
+version:                0.0.1.1
 stability:              experimental
 license:                PublicDomain
 
@@ -16,14 +16,7 @@ description:            Parser, data type and formatter for Apple's XML property
 
 flag HaXml_1_13
   default:              False
-  description:          The Hackage website builder used to be very finicky
-                        and the bytestring-0.9.1.5 update frustrated me,
-                        because several versions of this package failed to
-                        build because of it.  HaXml 1.13 support was added as
-                        part of a hack to make it build on the hackage build
-                        server.  Hopefully the ghc-6.12 changeover will have
-                        fixed things, so I'm eliminating the build hack that
-                        was used before.  HaXml-1.13 support remains, though.
+  description:          Compile against HaXml 1.13 rather than the latest.
 
 Library
   hs-source-dirs:       src
