@@ -19,7 +19,8 @@ import Data.PropertyList.Xml.Dtd as X
 import Data.PropertyList.Algebra
 import Data.PropertyList.Xml.Types
 
-import Control.Functor.Pointed
+import Data.Pointed
+import Data.Copointed
 import Control.Arrow ((+++))
 import Control.Monad.Identity
 import qualified Data.Map as M
@@ -51,7 +52,7 @@ dateFormat = "%FT%TZ"
 instance PListAlgebra f PlistItem => PListAlgebra f Plist where
     plistAlgebra = plistItemToPlist . plistAlgebra . fmap (fmap plistToPlistItem)
 
-instance Copointed f => PListAlgebra f PlistItem where
+instance (Functor f, Copointed f) => PListAlgebra f PlistItem where
     {-# SPECIALIZE instance PListAlgebra Identity PlistItem #-}
     plistAlgebra = foldPropertyListS
           (\x -> OneOf9 (Array x)
@@ -62,7 +63,7 @@ instance Copointed f => PListAlgebra f PlistItem where
         ) (\x -> SixOf9 (AInteger (show x))
         ) (\x -> SevenOf9 (AString x)
         ) (\x -> if x then EightOf9 X.True else NineOf9 X.False
-        ) . extract
+        ) . copoint
 
 instance PListAlgebra   (Either UnparsedPlistItem) PlistItem where
     plistAlgebra (Left unparsed) = unparsedPlistItemToPlistItem unparsed

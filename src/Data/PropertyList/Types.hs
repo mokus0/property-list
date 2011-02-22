@@ -8,31 +8,42 @@
 -- and their algebras/coalgebras.  These types are the core of the property-list
 -- implementation, representing either complete or partial propertylists, 
 -- respectively, in the most \"universal\" form possible.
-module Data.PropertyList.Types where
+module Data.PropertyList.Types
+    ( -- * The 'PropertyList' data type
+      -- (the universal algebra/coalgebra for the unlifted signature)
+      
+      PropertyList
+      
+      -- * The 'PartialPropertyList' data type
+      -- (the universal algebra/coalgebra for the signature extended by 
+      --  introducing new constructors)
+    , PartialPropertyList
+      
+      -- * Convenient functions for converting from 'PartialPropertyList' to
+      -- 'PropertyList'.
+    , completePropertyList
+    , completePropertyListBy
+    , completePropertyListByM
+    ) where
 
 import Data.PropertyList.Algebra
 
-import Control.Applicative      (Applicative(..), WrappedMonad(..), (<$>))
-import Control.Functor.Fix      (FixF(..))
-import Control.Functor.Pointed  (Pointed(..), Copointed(..))
-import Control.Monad            (liftM, ap)
-import Control.Monad.Free       (Free(..), MonadFree(..), runFree)
+import Control.Applicative      (Applicative(..))
+import Data.Functor.Foldable    (Fix(..))
+import Data.Pointed             (Pointed(..))
+import Data.Copointed           (Copointed(..))
+import Control.Monad            (liftM)
+import Control.Monad.Free       (Free(..))
 import Control.Monad.Identity   (Identity(..))
-import Data.Foldable            (Foldable(foldMap))
-import Data.Traversable         (Traversable(..))
-import Data.Void                (Void, void)
+import Data.Foldable            (Foldable)
+import Data.Traversable         (Traversable(traverse), mapM)
+import Data.Void                (Void, absurd)
 
 import Unsafe.Coerce            (unsafeCoerce) {- used _only_ to eliminate fmap traversals for newtype constructors -}
 
--- * The 'PropertyList' data type
--- (the universal algebra/coalgebra for the unlifted signature)
-
 -- |A fully-parsed property list.
-newtype PropertyList = PL { unPL :: FixF PropertyListS }
-instance Eq PropertyList where
-    PL (InF x) == PL (InF y) = fmap PL x == fmap PL y
-instance Ord PropertyList where
-    PL (InF x) `compare` PL (InF y) = fmap PL x `compare` fmap PL y
+newtype PropertyList = PL { unPL :: Fix PropertyListS }
+    deriving (Eq, Ord)
 
 {-# RULES
     -- don't traverse with no-ops!
@@ -42,7 +53,7 @@ instance Ord PropertyList where
 
 instance Show PropertyList where
     show pl = showsPrec 0 pl " :: PropertyList"
-    showsPrec p (PL x) = showParen (p > 10) $ case outF x of
+    showsPrec p (PL (Fix x)) = showParen (p > 10) $ case x of
         PLArray  arr  -> showString "plArray "  . showsPrec 11 (fmap PL arr)
         PLData   bs   -> showString "plData "   . showsPrec 11 bs  
         PLDate   time -> showString "plDate "   . showsPrec 11 time
@@ -52,69 +63,45 @@ instance Show PropertyList where
         PLString str  -> showString "plString " . showsPrec 11 str 
         PLBool   bool -> showString "plBool "   . showsPrec 11 bool
 
-instance Copointed f => PListAlgebra f PropertyList where
+instance (Functor f, Copointed f) => PListAlgebra f PropertyList where
     {-# SPECIALIZE instance PListAlgebra Identity PropertyList #-}
-    plistAlgebra = PL . InF . fmap unPL . extract
+    plistAlgebra = PL . Fix . fmap unPL . copoint
 
 instance PListCoalgebra Identity a => PListAlgebra (Either a) PropertyList where
     plistAlgebra = either toPlist (plistAlgebra . Identity)
 
 instance InitialPList Identity PropertyList
 
-instance Pointed f => PListCoalgebra f PropertyList where
+instance (Functor f, Pointed f) => PListCoalgebra f PropertyList where
     {-# SPECIALIZE instance PListCoalgebra Identity PropertyList #-}
     plistCoalgebra = point . fmap PL . outF . unPL
+        where outF (Fix x) = x
 
 instance TerminalPList Identity PropertyList
-
-foldPropertyList f (PL pl) = fold pl
-    where fold (InF x) = f (fmap fold x)
-
--- * The 'PartialPropertyList' data type
--- (the universal algebra/coalgebra for the signature extended by 
---  introducing new constructors)
 
 -- |A partially-parsed property-list term algebra, parameterized over the type of
 -- \"structural holes\" in the terms.
 newtype PartialPropertyList a = PPL {unPPL :: Free PropertyListS a}
-    deriving (Pointed, Functor, Monad, MonadFree PropertyListS)
+    deriving (Eq, Ord, Functor, Applicative, Monad, Foldable, Traversable)
 {-# RULES
     -- don't traverse with no-ops!
 "fmap PPL   -> unsafeCoerce"     fmap PPL   = unsafeCoerce
 "fmap unPPl -> unsafeCoerce"     fmap unPPL = unsafeCoerce
   #-}
 
-instance Applicative PartialPropertyList where
-    pure = return
-    (<*>) = ap
 
-instance Foldable PartialPropertyList where
-    foldMap f (PPL x) = case runFree x of
-        Left  x -> f x
-        Right x -> foldMap (foldMap f . PPL) x
+instance Pointed PartialPropertyList where
+    point = PPL . Pure
 
-instance Traversable PartialPropertyList where
-    traverse f (PPL x) = case runFree x of
-        Left x  -> return <$> f x
-        Right x -> inFree <$> traverse (traverse f . PPL) x
-
-instance Eq a => Eq (PartialPropertyList a) where
-    PPL x == PPL y = case (runFree x, runFree y) of
-        (Left a,  Left  b) -> a == b
-        (Right a, Right b) -> fmap PPL a == fmap PPL b
-        _                  -> False
-
-instance Ord a => Ord (PartialPropertyList a) where
-    PPL x `compare` PPL y = case (runFree x, runFree y) of
-        (Left a,  Left  b) -> a `compare` b
-        (Left _,  Right _) -> Left () `compare` Right ()
-        (Right a, Right b) -> fmap PPL a `compare` fmap PPL b
-        (Right _, Left  _) -> Right () `compare` Left ()
+-- | [internal] 'Free' constructor specialized to 'PartialPropertyList'.
+-- 'point'/'pure'/'return' is the corresponding 'Pure' constructor.
+inPPL :: PropertyListS (PartialPropertyList a) -> PartialPropertyList a
+inPPL = PPL . Free . fmap unPPL
 
 instance Show a => Show (PartialPropertyList a) where
-    showsPrec p (PPL x) = showParen (p > 10) $ case runFree x of
-        Left a ->  showString "return " . showsPrec 11 a
-        Right x -> case x of
+    showsPrec p (PPL x) = showParen (p > 10) $ case x of
+        Pure a ->  showString "return " . showsPrec 11 a
+        Free x -> case x of
             PLArray  arr  -> showString "plArray "  . showsPrec 11 (fmap PPL arr)
             PLData   bs   -> showString "plData "   . showsPrec 11 bs  
             PLDate   time -> showString "plDate "   . showsPrec 11 time
@@ -130,32 +117,29 @@ instance Show a => Show (PartialPropertyList a) where
 -- this instance overlaps (with incoherence allowed) with all 
 -- others for PartialPropertyList: ensure that you don't define 
 -- an explicit instance for any 'Copointed' functor!
-instance Copointed f => PListAlgebra f (PartialPropertyList a) where
+instance (Functor f, Copointed f) => PListAlgebra f (PartialPropertyList a) where
     {-# SPECIALIZE instance PListAlgebra Identity (PartialPropertyList a) #-}
-    plistAlgebra = inFree . extract
+    plistAlgebra = inPPL . copoint
 
 instance PListAlgebra Maybe (PartialPropertyList ()) where
-    plistAlgebra Nothing  = return ()
-    plistAlgebra (Just x) = inFree x
+    plistAlgebra Nothing  = point ()
+    plistAlgebra (Just x) = inPPL x
 
 instance PListAlgebra (Either a) (PartialPropertyList a) where
-    plistAlgebra (Left  x) = return x
-    plistAlgebra (Right x) = inFree x
+    plistAlgebra (Left  x) = point x
+    plistAlgebra (Right x) = inPPL x
 
 instance InitialPList (Either a) (PartialPropertyList a) where
 
 instance PListCoalgebra (Either a) (PartialPropertyList a) where
-    plistCoalgebra (PPL xf) = fmap (fmap PPL) (runFree xf)
+    plistCoalgebra (PPL (Pure a)) = Left  a
+    plistCoalgebra (PPL (Free a)) = Right (fmap PPL a)
 
 instance TerminalPList (Either a) (PartialPropertyList a) where
 
 instance PListCoalgebra Maybe (PartialPropertyList a) where
-    plistCoalgebra (PPL xf) = case runFree xf of
-        Left  _ -> Nothing
-        Right x -> Just (fmap PPL x)
-
--- * Convenient functions for converting from 'PartialPropertyList' to
--- 'PropertyList'.
+    plistCoalgebra (PPL (Pure _)) = Nothing
+    plistCoalgebra (PPL (Free x)) = Just (fmap PPL x)
 
 -- |Take a 'PartialPropertyList' that has been expunged of all incomplete
 -- elements (as witnessed by the 'PListCoalgebra' 'Identity' @a@ context, which
@@ -192,8 +176,8 @@ completePropertyListBy f = fmap completePropertyList . traverse f
 -- 'Applicative' instance and you'd rather not add an orphan, etc.)
 completePropertyListByM :: (Monad m, PListCoalgebra Identity b)
     => (a -> m b) -> PartialPropertyList a -> m PropertyList
-completePropertyListByM f = liftM completePropertyList . unwrapMonad . traverse (WrapMonad . f)
+completePropertyListByM f = liftM completePropertyList . Data.Traversable.mapM f
 
 -- instance for Void to allow it to be used as @a@ in 'completePropertyList':
 instance Functor f => PListCoalgebra f Void where
-    plistCoalgebra = void
+    plistCoalgebra = absurd
