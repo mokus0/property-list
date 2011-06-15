@@ -19,7 +19,6 @@ import Data.PropertyList.Xml.Dtd as X
 import Data.PropertyList.Algebra
 import Data.PropertyList.Xml.Types
 
-import Data.Pointed
 import Data.Copointed
 import Control.Arrow ((+++))
 import Control.Monad.Identity

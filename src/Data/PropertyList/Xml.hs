@@ -19,6 +19,7 @@ module Data.PropertyList.Xml
     
     ) where
 
+import Data.Copointed
 import Data.PropertyList.Algebra
 import Data.PropertyList.Types
 import Data.PropertyList.Xml.Parse
@@ -66,8 +67,11 @@ readXmlPropertyList str = do
 -- |Render a propertylist to a 'String' in the xml1 plist format from any
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
-showXmlPropertyList :: (InitialPList f pl, PListAlgebra f PlistItem) => pl -> String
-showXmlPropertyList = showXmlPlist . plistItemToPlist . fromPlist
+showXmlPropertyList :: (InitialPList f pl, Functor f, Copointed f) => pl -> String
+showXmlPropertyList
+    = showXmlPlist
+    . plistItemToPlist
+    . fromPlist
 
 
 -- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from files
@@ -96,7 +100,7 @@ readXmlPropertyListFromFile file = do
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
 writeXmlPropertyListToFile
-  :: (InitialPList f pl, PListAlgebra f PlistItem) =>
+  :: (InitialPList f pl, Functor f, Copointed f) =>
      FilePath -> pl -> IO ()
 writeXmlPropertyListToFile file plist = do
         writeXmlPlistToFile file (plistItemToPlist (fromPlist plist))

@@ -149,7 +149,8 @@ instance PListCoalgebra Maybe (PartialPropertyList a) where
 -- This is just a convenient synonym for 'fromPlist' with the types
 -- explicitly specialized.
 completePropertyList :: PListCoalgebra Identity a => PartialPropertyList a -> PropertyList
-completePropertyList = fromPlist
+completePropertyList = foldPList
+    (plistAlgebra :: PListCoalgebra Identity a => Either a (PropertyListS PropertyList) -> PropertyList)
 
 -- |Like 'completePropertyList' but also accepting a function that \"attempts\"
 -- to complete any incomplete value in the 'PartialPropertyList'.
