@@ -34,7 +34,7 @@ Library
                         bytestring,
                         bytestring-class,
                         containers, 
-                        free,
+                        comonad-transformers == 1.7.*,
                         dataenc,
                         mtl,
                         old-locale,
