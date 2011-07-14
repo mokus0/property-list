@@ -1,9 +1,9 @@
 name:                   property-list
-version:                0.0.3
+version:                0.0.3.1
 stability:              experimental
 license:                PublicDomain
 
-cabal-version:          >= 1.2
+cabal-version:          >= 1.6
 build-type:             Simple
 
 author:                 James Cook <james.cook@usma.edu>
@@ -13,6 +13,10 @@ homepage:               http://code.haskell.org/~mokus/property-list
 category:               Data, Parsing, XML
 synopsis:               XML property list parser
 description:            Parser, data type and formatter for Apple's XML property list 1.0 format.
+
+source-repository head
+  type:                 git
+  location:             git://github.com/mokus0/property-list.git
 
 flag HaXml_1_13
   default:              False
@@ -56,3 +60,4 @@ Library
   else
     other-modules:      Data.PropertyList.Xml.Dtd
     build-depends:      HaXml >= 1.19
+    build-depends:      HaXml < 1.22 || > 1.22
