@@ -1,7 +1,7 @@
 {-# LANGUAGE 
     MultiParamTypeClasses,
     FlexibleContexts, FlexibleInstances, IncoherentInstances,
-    GeneralizedNewtypeDeriving
+    GeneralizedNewtypeDeriving, TypeFamilies
   #-}
 
 -- |This module implements the 'PropertyList' and 'PartialPropertyList' types
@@ -30,6 +30,7 @@ import Data.PropertyList.Algebra
 
 import Control.Applicative      (Applicative(..))
 import Data.Functor.Foldable    (Fix(..))
+import qualified Data.Functor.Foldable as RS
 import Data.Pointed             (Pointed(..))
 import Data.Copointed           (Copointed(..))
 import Control.Monad            (liftM)
@@ -62,6 +63,12 @@ instance Show PropertyList where
         PLInt    int  -> showString "plInt "    . showsPrec 11 int 
         PLString str  -> showString "plString " . showsPrec 11 str 
         PLBool   bool -> showString "plBool "   . showsPrec 11 bool
+
+type instance RS.Base PropertyList = PropertyListS
+instance RS.Foldable PropertyList where
+    project = runIdentity . plistCoalgebra
+instance RS.Unfoldable PropertyList where
+    embed = plistAlgebra . Identity
 
 instance (Functor f, Copointed f) => PListAlgebra f PropertyList where
     {-# SPECIALIZE instance PListAlgebra Identity PropertyList #-}

@@ -1,5 +1,5 @@
 name:                   property-list
-version:                0.0.3.1
+version:                0.1
 stability:              experimental
 license:                PublicDomain
 
@@ -27,18 +27,28 @@ Library
   ghc-options:          -fwarn-unused-binds -fwarn-unused-imports
   exposed-modules:      Data.PropertyList
                         Data.PropertyList.Algebra
+                        Data.PropertyList.Binary
                         Data.PropertyList.Xml
                         
   other-modules:        Data.PropertyList.Types
+                        Data.PropertyList.Binary.Algebra
+                        Data.PropertyList.Binary.Linearize
+                        Data.PropertyList.Binary.Parse
+                        Data.PropertyList.Binary.Put
+                        Data.PropertyList.Binary.Types
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.KeyPath
                         Data.PropertyList.Xml.Parse
                         Data.PropertyList.Xml.Types
   build-depends:        base >= 4 && <5,
+                        attoparsec,
+                        attoparsec-binary,
+                        binary,
                         bytestring,
                         bytestring-class,
                         containers, 
                         comonad-transformers >= 1.8,
+                        data-binary-ieee754,
                         dataenc,
                         free >= 1.8,
                         mtl,
@@ -48,8 +58,10 @@ Library
                         recursion-schemes >= 1.8,
                         syb,
                         template-haskell,
+                        text,
                         time,
                         th-fold,
+                        vector,
                         void
 
   if flag(HaXml_1_13)

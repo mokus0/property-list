@@ -1,0 +1,73 @@
+module Data.PropertyList.Binary.Linearize
+    ( linearize
+    , absolutize
+    , intern
+    , delinearize
+    ) where
+
+import Control.Monad
+import Control.Monad.ST.Lazy
+import qualified Data.Map as M
+import Data.Maybe
+import Data.PropertyList.Types
+import Data.PropertyList.Algebra
+import Data.PropertyList.Binary.Algebra ({- instances-})
+import Data.PropertyList.Binary.Types
+import Data.Sequence as S
+import Data.STRef.Lazy
+import Prelude as P
+
+linearize :: Integral i => PropertyList -> BPListRecords Abs i
+linearize = intern . absolutize . fromPlist
+
+-- Take a Seq of BPListRecords using relative addressing and change them to use absolute addressing
+absolutize :: Num i => BPListRecords Rel i -> BPListRecords Abs i
+absolutize (BPListRecords root recs) =
+    BPListRecords root (S.mapWithIndex (shiftRec . fromIntegral) recs)
+    where
+        shiftRec i (BPLArray xs  ) = BPLArray (map (i+) xs)
+        shiftRec i (BPLSet xs    ) = BPLSet   (map (i+) xs)
+        shiftRec i (BPLDict ks vs) = BPLDict  (map (i+) ks) (map (i+) vs)
+        shiftRec i other = other
+
+-- Take a Seq of BPListRecords using absolute addressing and eliminate 
+-- all duplicate records, compact the table and update all internal
+-- references.
+intern :: Integral i => BPListRecords Abs i -> BPListRecords Abs i
+intern (BPListRecords root recs) = BPListRecords (reloc root) recs'
+    where
+        reloc i = M.findWithDefault noReloc i relocs
+            where noReloc = error ("intern: internal error: no relocation for index " ++ show i)
+        (relocs, recs') = runST $ do
+            index   <- newSTRef M.empty
+            relocs  <- newSTRef M.empty
+            
+            let updateRec n' x = do
+                    let n = fromIntegral n'
+                    recTable <- readSTRef index
+                    case M.lookup x recTable of
+                        Nothing     -> do
+                            let nRecs = fromIntegral (M.size recTable)
+                            modifySTRef relocs (M.insert n nRecs)
+                            writeSTRef index (M.insert x nRecs recTable)
+                            return (Just (fmap reloc x))
+                        Just loc    -> do
+                            modifySTRef relocs (M.insert n loc)
+                            return Nothing
+            recs <- updateWithIndexM updateRec recs
+            
+            relocs <- readSTRef relocs
+            return (relocs, recs)
+
+updateWithIndexM :: Monad m => (Int -> a -> m (Maybe b)) -> Seq a -> m (Seq b)
+updateWithIndexM f = S.foldrWithIndex g (return S.empty)
+    where
+        g n x xs = do
+            mbX <- f n x
+            case mbX of
+                Nothing -> xs
+                Just x'  -> liftM (x' <|) xs
+
+delinearize :: Integral i => BPListRecords Abs i -> PartialPropertyList (UnparsedBPListRecord i)
+delinearize = toPlist
+

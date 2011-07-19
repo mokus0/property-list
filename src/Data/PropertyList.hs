@@ -57,11 +57,15 @@ module Data.PropertyList
     , InitialPList, TerminalPList
 
     -- * Parsing and formatting property lists using any supported format
-    , readPropertyList
-    , showPropertyList
-    
     , readPropertyListFromFile
     , writePropertyListToFile
+    
+    -- * Parsing and formatting property lists using the Binary format
+    , readBinaryPropertyList
+    , encodeBinaryPropertyList
+    
+    , readBinaryPropertyListFromFile
+    , writeBinaryPropertyListToFile
     
     -- * Parsing and formatting property lists using the XML format
     , readXmlPropertyList
@@ -126,28 +130,39 @@ module Data.PropertyList
     , module Data.PropertyList.KeyPath
     ) where
 
+import Control.Exception (try, SomeException(..))
+
 import Data.PropertyList.Algebra
+import Data.PropertyList.Binary
 import Data.PropertyList.Types
 import Data.PropertyList.Xml
 
 import Data.PropertyList.PropertyListItem
 import Data.PropertyList.KeyPath
 
--- | Read a property list from a 'String', trying all supported property list formats.
--- Presently, only the \"XML1\" format is supported.  See also 'readXmlPropertyList'.
-readPropertyList :: String -> Either String PropertyList
-readPropertyList = readXmlPropertyList
-
--- | Write a property list to a 'String', using a \"preferred\" property list format.
--- Presently, that is the \"XML1\" format.  See also 'showXmlPropertyList'.
-showPropertyList :: PropertyList -> String
-showPropertyList = showXmlPropertyList
+import Data.Word
 
 -- | Read a property list from a file, trying all supported property list formats.
--- Presently, only the \"XML1\" format is supported.  See also
--- 'readXmlPropertyListFromFile'.
+-- Presently, the \"XML1\" and \"bplist00\" formats are supported.  See also
+-- 'readXmlPropertyListFromFile' and 'readBinaryPropertyListFromFile'.
 readPropertyListFromFile :: FilePath -> IO PropertyList
-readPropertyListFromFile = readXmlPropertyListFromFile
+readPropertyListFromFile file = do
+    partial <- readPartial file
+    case partial of
+        Left  xml -> completePropertyListByM barf xml
+        Right bin -> completePropertyListByM barf bin
+    where
+        readPartial :: FilePath -> IO (Either
+            (PartialPropertyList UnparsedPlistItem)
+            (PartialPropertyList (UnparsedBPListRecord Word64)))
+        readPartial file = do
+            mbPartial <- try (readBinaryPartialPropertyListFromFile file)
+            case mbPartial of
+                Left SomeException{} -> fmap Left (readXmlPartialPropertyListFromFile file >>= either fail return)
+                Right bin            -> return (Right bin)
+        
+        barf :: Show a => a -> IO PropertyList
+        barf unparsed = fail ("Unparseable item found: " ++ show unparsed)
 
 -- | Write a property list to a file, using a \"preferred\" property list format.
 -- Presently, that is the \"XML1\" format.  See also 'writeXmlPropertyListToFile'.
