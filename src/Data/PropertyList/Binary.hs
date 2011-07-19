@@ -27,9 +27,8 @@ import Data.PropertyList.Binary.Linearize
 import Data.PropertyList.Binary.Parse
 import Data.PropertyList.Binary.Put
 import Data.PropertyList.Binary.Types
-import Data.Word
 
-readBinaryPartialPropertyList :: BS.ByteString -> Either String (PartialPropertyList (UnparsedBPListRecord Word64))
+readBinaryPartialPropertyList :: BS.ByteString -> Either String (PartialPropertyList UnparsedBPListRecord)
 readBinaryPartialPropertyList bs = do
     delinearize <$> readBPListRecords bs
 
@@ -43,7 +42,7 @@ readBinaryPropertyListFromFile path = do
     contents <- BS.readFile path
     either fail return (readBinaryPropertyList contents)
 
-readBinaryPartialPropertyListFromFile :: FilePath -> IO (PartialPropertyList (UnparsedBPListRecord Word64))
+readBinaryPartialPropertyListFromFile :: FilePath -> IO (PartialPropertyList UnparsedBPListRecord)
 readBinaryPartialPropertyListFromFile file = do
     bs <- BS.readFile file
     either fail return (readBinaryPartialPropertyList bs)

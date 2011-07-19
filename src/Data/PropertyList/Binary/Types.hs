@@ -8,14 +8,14 @@ import Data.Time (UTCTime)
 import Data.Vector.Unboxed (Vector)
 import Data.Word
 
-data BPListRecord i
+data BPListRecord
     = BPLNull
     | BPLFill
-    | BPLArray [i]
-    | BPLSet [i]
+    | BPLArray [Word64]
+    | BPLSet [Word64]
     | BPLData ByteString
     | BPLDate UTCTime
-    | BPLDict [i] [i]
+    | BPLDict [Word64] [Word64]
     | BPLReal Double
     | BPLInt Integer
     | BPLString String
@@ -23,39 +23,34 @@ data BPListRecord i
     | BPLBool Bool
     deriving (Eq, Ord, Show)
 
-instance Functor BPListRecord where
-    fmap f (BPLArray   xs)  = BPLArray (map f xs)
-    fmap f (BPLSet     xs)  = BPLSet   (map f xs)
-    fmap f (BPLDict ks vs)  = BPLDict  (map f ks) (map f vs)
-    fmap f BPLNull          = BPLNull
-    fmap f BPLFill          = BPLFill
-    fmap f (BPLData     x)  = BPLData   x
-    fmap f (BPLDate     x)  = BPLDate   x
-    fmap f (BPLReal     x)  = BPLReal   x
-    fmap f (BPLInt      x)  = BPLInt    x
-    fmap f (BPLString   x)  = BPLString x
-    fmap f (BPLUID      x)  = BPLUID    x
-    fmap f (BPLBool     x)  = BPLBool   x
+mapObjRefs f (BPLArray   xs)  = BPLArray (map f xs)
+mapObjRefs f (BPLSet     xs)  = BPLSet   (map f xs)
+mapObjRefs f (BPLDict ks vs)  = BPLDict  (map f ks) (map f vs)
+mapObjRefs f BPLNull          = BPLNull
+mapObjRefs f BPLFill          = BPLFill
+mapObjRefs f (BPLData     x)  = BPLData   x
+mapObjRefs f (BPLDate     x)  = BPLDate   x
+mapObjRefs f (BPLReal     x)  = BPLReal   x
+mapObjRefs f (BPLInt      x)  = BPLInt    x
+mapObjRefs f (BPLString   x)  = BPLString x
+mapObjRefs f (BPLUID      x)  = BPLUID    x
+mapObjRefs f (BPLBool     x)  = BPLBool   x
 
-data UnparsedBPListRecord i
+data UnparsedBPListRecord
     = UnparsedNull
     | UnparsedFill
-    | MissingObjectRef i
-    | UnparsedDict (Map i i)
-    | UnparsedSet [i]
+    | MissingObjectRef Word64
+    | UnparsedDict (Map Word64 Word64)
+    | UnparsedSet [Word64]
     | UnparsedUID Integer
     deriving (Eq, Ord, Show)
 
 data Abs
 data Rel
-data BPListRecords mode i = BPListRecords
-    { rootObject    :: i
-    , records       :: Seq (BPListRecord i)
+data BPListRecords mode = BPListRecords
+    { rootObject    :: Word64
+    , records       :: Seq BPListRecord
     } deriving (Eq, Ord, Show)
-
-instance Functor (BPListRecords mode) where
-    fmap f (BPListRecords root records)
-        = BPListRecords (f root) (fmap (fmap f) records)
 
 data RawBPList = RawBPList
     { rawFile    :: ByteString

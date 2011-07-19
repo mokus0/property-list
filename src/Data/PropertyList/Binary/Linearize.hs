@@ -17,11 +17,11 @@ import Data.Sequence as S
 import Data.STRef.Lazy
 import Prelude as P
 
-linearize :: Integral i => PropertyList -> BPListRecords Abs i
+linearize :: PropertyList -> BPListRecords Abs
 linearize = intern . absolutize . fromPlist
 
 -- Take a Seq of BPListRecords using relative addressing and change them to use absolute addressing
-absolutize :: Num i => BPListRecords Rel i -> BPListRecords Abs i
+absolutize :: BPListRecords Rel -> BPListRecords Abs
 absolutize (BPListRecords root recs) =
     BPListRecords root (S.mapWithIndex (shiftRec . fromIntegral) recs)
     where
@@ -33,7 +33,7 @@ absolutize (BPListRecords root recs) =
 -- Take a Seq of BPListRecords using absolute addressing and eliminate 
 -- all duplicate records, compact the table and update all internal
 -- references.
-intern :: Integral i => BPListRecords Abs i -> BPListRecords Abs i
+intern :: BPListRecords Abs -> BPListRecords Abs
 intern (BPListRecords root recs) = BPListRecords (reloc root) recs'
     where
         reloc i = M.findWithDefault noReloc i relocs
@@ -50,7 +50,7 @@ intern (BPListRecords root recs) = BPListRecords (reloc root) recs'
                             let nRecs = fromIntegral (M.size recTable)
                             modifySTRef relocs (M.insert n nRecs)
                             writeSTRef index (M.insert x nRecs recTable)
-                            return (Just (fmap reloc x))
+                            return (Just (mapObjRefs reloc x))
                         Just loc    -> do
                             modifySTRef relocs (M.insert n loc)
                             return Nothing
@@ -68,6 +68,6 @@ updateWithIndexM f = S.foldrWithIndex g (return S.empty)
                 Nothing -> xs
                 Just x'  -> liftM (x' <|) xs
 
-delinearize :: Integral i => BPListRecords Abs i -> PartialPropertyList (UnparsedBPListRecord i)
+delinearize :: BPListRecords Abs -> PartialPropertyList UnparsedBPListRecord
 delinearize = toPlist
 

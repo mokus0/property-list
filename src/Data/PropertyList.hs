@@ -140,8 +140,6 @@ import Data.PropertyList.Xml
 import Data.PropertyList.PropertyListItem
 import Data.PropertyList.KeyPath
 
-import Data.Word
-
 -- | Read a property list from a file, trying all supported property list formats.
 -- Presently, the \"XML1\" and \"bplist00\" formats are supported.  See also
 -- 'readXmlPropertyListFromFile' and 'readBinaryPropertyListFromFile'.
@@ -154,7 +152,7 @@ readPropertyListFromFile file = do
     where
         readPartial :: FilePath -> IO (Either
             (PartialPropertyList UnparsedPlistItem)
-            (PartialPropertyList (UnparsedBPListRecord Word64)))
+            (PartialPropertyList UnparsedBPListRecord))
         readPartial file = do
             mbPartial <- try (readBinaryPartialPropertyListFromFile file)
             case mbPartial of

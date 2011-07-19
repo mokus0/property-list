@@ -10,7 +10,7 @@ import Data.Sequence as S ((<|), (><))
 import qualified Data.Sequence as S
 import qualified Data.Map as M
 
-instance Integral i => PListAlgebra Identity (BPListRecords Rel i) where
+instance PListAlgebra Identity (BPListRecords Rel) where
     plistAlgebra = BPListRecords 0 . flatten . runIdentity
         where
             indexFrom n [] = []
@@ -36,7 +36,7 @@ instance Integral i => PListAlgebra Identity (BPListRecords Rel i) where
             flatten (PLBool   b) = S.singleton (BPLBool   b)
 
 -- TODO: check for cycles?
-instance Integral i => PListCoalgebra (Either (UnparsedBPListRecord i)) (BPListRecords Abs i) where
+instance PListCoalgebra (Either UnparsedBPListRecord) (BPListRecords Abs) where
     plistCoalgebra (BPListRecords root recs) = fmap (fmap (flip BPListRecords recs)) (unpackRec root)
         where
             unpackRec i
