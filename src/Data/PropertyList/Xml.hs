@@ -52,7 +52,7 @@ readXmlPartialPropertyList = fmap (toPlist . plistToPlistItem) . readXmlPlist
 
 -- |Read a property list from a 'String' in the xml1 format.  If parsing
 -- fails, returns a description of the problem in the 'Left' result.
-readXmlPropertyList :: FilePath -> Either String PropertyList
+readXmlPropertyList :: String -> Either String PropertyList
 readXmlPropertyList str = do
     x <- readXmlPartialPropertyList str :: Either String (PartialPropertyList UnparsedPlistItem)
     completePropertyListByM (\unparsed -> Left ("Unparseable item found: " ++ show unparsed) :: Either String PropertyList) x
@@ -77,23 +77,22 @@ showXmlPropertyList
 -- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from files
 
 -- |Read an XML propertylist from a file in the xml1 plist format to a
--- propertylist type which is terminal for the liftings supported by
--- 'PlistItem'  (such as @'PartialPropertyList' 'UnparsedPlistItem'@
--- or @'PartialPropertyList' 'PlistItem'@).
+-- partial propertylist which is structurally sound but may contain some 
+-- unparseable nodes.
 readXmlPartialPropertyListFromFile
-  :: (PListCoalgebra f PlistItem, TerminalPList f pl) =>
-     FilePath -> IO (Either String pl)
+  :: FilePath -> IO (PartialPropertyList UnparsedPlistItem)
 readXmlPartialPropertyListFromFile file = do
         x <- readXmlPlistFromFile file
-        return (fmap (toPlist . plistToPlistItem) x)
+        either fail (return . toPlist . plistToPlistItem) x
 
 -- |Read a property list from a file in the xml1 format.  If parsing fails,
 -- calls 'fail'.
 readXmlPropertyListFromFile :: FilePath -> IO PropertyList
 readXmlPropertyListFromFile file = do
-    x <- readXmlPartialPropertyListFromFile file :: IO (Either String (PartialPropertyList UnparsedPlistItem))
-    y <- either fail return x
-    completePropertyListByM (\unparsed -> fail ("Unparseable item found: " ++ show unparsed) :: IO PropertyList) y
+    x <- readXmlPartialPropertyListFromFile file
+    completePropertyListByM barf x
+    where
+        barf unparsed = fail ("Unparseable item found: " ++ show unparsed) :: IO PropertyList
     
 
 -- |Output a propertylist to a file in the xml1 plist format from any

@@ -2,7 +2,6 @@
 module Data.PropertyList.Binary.Types where
 
 import Data.ByteString (ByteString)
-import Data.Map (Map)
 import Data.Sequence (Seq)
 import Data.Time (UTCTime)
 import Data.Vector.Unboxed (Vector)
@@ -40,7 +39,7 @@ data UnparsedBPListRecord
     = UnparsedNull
     | UnparsedFill
     | MissingObjectRef Word64
-    | UnparsedDict (Map Word64 Word64)
+    | UnparsedDict [Word64] [Word64]
     | UnparsedSet [Word64]
     | UnparsedUID Integer
     deriving (Eq, Ord, Show)

@@ -35,7 +35,6 @@ instance PListAlgebra Identity (BPListRecords Rel) where
             flatten (PLString s) = S.singleton (BPLString s)
             flatten (PLBool   b) = S.singleton (BPLBool   b)
 
--- TODO: check for cycles?
 instance PListCoalgebra (Either UnparsedBPListRecord) (BPListRecords Abs) where
     plistCoalgebra (BPListRecords root recs) = fmap (fmap (flip BPListRecords recs)) (unpackRec root)
         where
@@ -57,7 +56,7 @@ instance PListCoalgebra (Either UnparsedBPListRecord) (BPListRecords Abs) where
                                     key <- unpackRec k
                                     case key of
                                         PLString s -> Right s
-                                        _ -> Left (UnparsedDict (M.fromList (zip ks vs)))
+                                        _ -> Left (UnparsedDict ks vs)
                                 | k <-  ks
                                 ]
                             return (PLDict (M.fromList (zip ks vs)))

@@ -17,10 +17,12 @@ import Data.Sequence as S
 import Data.STRef.Lazy
 import Prelude as P
 
+-- |Flatten a 'PropertyList' to a sequence of 'BPListRecords'.  The resulting records will
+-- use absolute addressing and will not have any duplicates.
 linearize :: PropertyList -> BPListRecords Abs
 linearize = intern . absolutize . fromPlist
 
--- Take a Seq of BPListRecords using relative addressing and change them to use absolute addressing
+-- |Take some 'BPListRecords' using relative addressing and change them to use absolute addressing
 absolutize :: BPListRecords Rel -> BPListRecords Abs
 absolutize (BPListRecords root recs) =
     BPListRecords root (S.mapWithIndex (shiftRec . fromIntegral) recs)
@@ -30,7 +32,7 @@ absolutize (BPListRecords root recs) =
         shiftRec i (BPLDict ks vs) = BPLDict  (map (i+) ks) (map (i+) vs)
         shiftRec i other = other
 
--- Take a Seq of BPListRecords using absolute addressing and eliminate 
+-- |Take some 'BPListRecords' using absolute addressing and eliminate 
 -- all duplicate records, compact the table and update all internal
 -- references.
 intern :: BPListRecords Abs -> BPListRecords Abs
@@ -68,6 +70,8 @@ updateWithIndexM f = S.foldrWithIndex g (return S.empty)
                 Nothing -> xs
                 Just x'  -> liftM (x' <|) xs
 
+-- TODO: check for cycles?
+-- |Reconstruct a property list from a collection of 'BPListRecords'
 delinearize :: BPListRecords Abs -> PartialPropertyList UnparsedBPListRecord
 delinearize = toPlist
 

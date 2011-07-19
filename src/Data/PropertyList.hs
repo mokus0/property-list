@@ -156,7 +156,7 @@ readPropertyListFromFile file = do
         readPartial file = do
             mbPartial <- try (readBinaryPartialPropertyListFromFile file)
             case mbPartial of
-                Left SomeException{} -> fmap Left (readXmlPartialPropertyListFromFile file >>= either fail return)
+                Left SomeException{} -> fmap Left (readXmlPartialPropertyListFromFile file)
                 Right bin            -> return (Right bin)
         
         barf :: Show a => a -> IO PropertyList
