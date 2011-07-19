@@ -41,6 +41,7 @@ rawBPList bs = do
     
     return (RawBPList bs header (V.fromList offsets) trailer)
 
+readBPListRecords :: BS.ByteString -> Either String (BPListRecords Abs)
 readBPListRecords bs = do
     raw <- rawBPList bs
     let tlr  = rawTrailer raw

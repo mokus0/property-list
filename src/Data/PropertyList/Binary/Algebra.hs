@@ -64,3 +64,9 @@ instance PListCoalgebra (Either UnparsedBPListRecord) (BPListRecords Abs) where
                         BPLInt      x   -> Right (PLInt x)
                         BPLString   x   -> Right (PLString x)
                         BPLBool     x   -> Right (PLBool x)
+
+-- To support smart-deconstructors:
+instance PListCoalgebra Maybe (BPListRecords Abs) where
+    plistCoalgebra 
+        = either (const Nothing :: UnparsedBPListRecord -> Maybe t) Just
+        . plistCoalgebra
