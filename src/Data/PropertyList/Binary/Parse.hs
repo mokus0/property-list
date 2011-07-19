@@ -17,9 +17,15 @@ import qualified Data.Vector.Unboxed as V
 import Data.Word
 import GHC.Float
 
+-- TODO: attoparsec's error reporting leaves a LOT to be desired... figure out how to make it better,
+-- even if that means switching to something else (Parsec?).  Or just give up on nice error handling
+-- and use binary?
+
 rawBPList bs = do
     let headerBS = BS.take 8 bs
-    header <- parseOnly bplistHeader headerBS
+    header@(BPListHeader version) <- parseOnly bplistHeader headerBS
+    when (version .&. 0xff00 /= 0x3000) $
+        Left "Unsupported bplist version"
     
     let trailerBS = BS.drop (BS.length bs - bplistTrailerBytes) bs
     trailer <- parseOnly bplistTrailer trailerBS
@@ -47,7 +53,7 @@ getBPListRecord (RawBPList bs _hdr offsets tlr) objNum
     | objNum >= 0 && fromIntegral objNum < V.length offsets
     = parseOnly (bplistRecord objRef) (BS.drop (fromIntegral (offsets V.! fromIntegral objNum)) bs)
     
-    | otherwise = fail "getBPListRecord: index out of range"
+    | otherwise = Left "getBPListRecord: index out of range"
     where
         objRef = sizedInt (fromIntegral (objectRefSize tlr))
 
@@ -55,6 +61,7 @@ bplistHeaderBytes = 8
 bplistHeader = do
     string (BSC8.pack "bplist")
     BPListHeader <$> anyWord16be
+    <?> "bplist header"
 
 bplistTrailerBytes = 32
 bplistTrailer =
