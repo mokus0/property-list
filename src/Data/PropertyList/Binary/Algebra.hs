@@ -51,19 +51,18 @@ instance PListCoalgebra (Either UnparsedBPListRecord) (BPListRecords Abs) where
                         BPLData     x   -> Right (PLData x)
                         BPLDate     x   -> Right (PLDate x)
                         BPLDict ks vs   -> do
-                            ks <- sequence 
-                                [ do
-                                    key <- unpackRec k
-                                    case key of
-                                        PLString s -> Right s
-                                        _ -> Left (UnparsedDict ks vs)
-                                | k <-  ks
-                                ]
+                            ks <- mapM (unpackStringOr (UnparsedDict ks vs)) ks
                             return (PLDict (M.fromList (zip ks vs)))
                         BPLReal     x   -> Right (PLReal x)
                         BPLInt      x   -> Right (PLInt x)
                         BPLString   x   -> Right (PLString x)
                         BPLBool     x   -> Right (PLBool x)
+            
+            unpackStringOr barf k = do
+                key <- unpackRec k
+                case key of
+                    PLString s  -> Right s
+                    _           -> Left barf
 
 -- To support smart-deconstructors:
 instance PListCoalgebra Maybe (BPListRecords Abs) where
