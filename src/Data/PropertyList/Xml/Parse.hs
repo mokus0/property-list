@@ -1,8 +1,8 @@
 {-# LANGUAGE 
     TemplateHaskell, CPP,
     MultiParamTypeClasses,
-    FlexibleContexts, FlexibleInstances, TypeSynonymInstances,
-    UndecidableInstances, OverlappingInstances, IncoherentInstances
+    FlexibleContexts, FlexibleInstances,
+    TypeSynonymInstances
   #-}
 
 module Data.PropertyList.Xml.Parse where
@@ -48,11 +48,10 @@ dateFormat = "%FT%TZ"
 
 -- This instance is not efficient, and should really only be used as a convenience
 -- to allow direct construction of 'Plist's using the \"smart constructors\"
-instance PListAlgebra f PlistItem => PListAlgebra f Plist where
+instance PListAlgebra Identity Plist where
     plistAlgebra = plistItemToPlist . plistAlgebra . fmap (fmap plistToPlistItem)
 
-instance (Functor f, Copointed f) => PListAlgebra f PlistItem where
-    {-# SPECIALIZE instance PListAlgebra Identity PlistItem #-}
+instance PListAlgebra Identity PlistItem where
     plistAlgebra = foldPropertyListS
           (\x -> OneOf9 (Array x)
         ) (\x -> TwoOf9 (Data (encode (unpack x)))
@@ -109,7 +108,7 @@ instance PListCoalgebra Maybe PlistItem where
 
 -- This instance is not efficient, and should really only be used as a convenience
 -- to allow direct deconstruction of 'Plist's using the \"view deconstructors\"
-instance PListCoalgebra f PlistItem => PListCoalgebra f Plist where
+instance PListCoalgebra Maybe Plist where
     plistCoalgebra = fmap (fmap plistItemToPlist) . plistCoalgebra . plistToPlistItem
 
 -- |Take the unparsed data from an 'UnparsedPlistItem' and wrap it in

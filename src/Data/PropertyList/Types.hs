@@ -1,6 +1,6 @@
 {-# LANGUAGE 
     MultiParamTypeClasses,
-    FlexibleContexts, FlexibleInstances, IncoherentInstances,
+    FlexibleContexts, FlexibleInstances,
     GeneralizedNewtypeDeriving, TypeFamilies
   #-}
 
@@ -70,9 +70,23 @@ instance RS.Foldable PropertyList where
 instance RS.Unfoldable PropertyList where
     embed = plistAlgebra . Identity
 
-instance (Functor f, Copointed f) => PListAlgebra f PropertyList where
-    {-# SPECIALIZE instance PListAlgebra Identity PropertyList #-}
-    plistAlgebra = PL . Fix . fmap unPL . copoint
+inPL :: PropertyListS PropertyList -> PropertyList
+inPL = PL . Fix . fmap unPL
+
+outPL :: PropertyList -> PropertyListS PropertyList
+outPL = fmap PL . outF . unPL
+    where outF (Fix x) = x
+
+-- |A default PartialPropertyList plistAlgebra for a fairly broad class of
+-- functors (copointed ones; that is, ones which always contain a principal value).
+copointedPLAlgebra 
+    :: (Functor f, Copointed f) 
+    => f (PropertyListS PropertyList) 
+    -> PropertyList
+copointedPLAlgebra = inPL . copoint
+
+instance PListAlgebra Identity PropertyList where
+    plistAlgebra = copointedPLAlgebra
 
 instance PListCoalgebra Identity a => PListAlgebra (Either a) PropertyList where
     plistAlgebra = either toPlist (plistAlgebra . Identity)
@@ -81,8 +95,7 @@ instance InitialPList Identity PropertyList
 
 instance (Functor f, Pointed f) => PListCoalgebra f PropertyList where
     {-# SPECIALIZE instance PListCoalgebra Identity PropertyList #-}
-    plistCoalgebra = point . fmap PL . outF . unPL
-        where outF (Fix x) = x
+    plistCoalgebra = point . outPL
 
 instance TerminalPList Identity PropertyList
 
@@ -121,20 +134,22 @@ instance Show a => Show (PartialPropertyList a) where
 -- instance Read...
 
 
--- this instance overlaps (with incoherence allowed) with all 
--- others for PartialPropertyList: ensure that you don't define 
--- an explicit instance for any 'Copointed' functor!
-instance (Functor f, Copointed f) => PListAlgebra f (PartialPropertyList a) where
-    {-# SPECIALIZE instance PListAlgebra Identity (PartialPropertyList a) #-}
-    plistAlgebra = inPPL . copoint
+-- |A default PartialPropertyList plistAlgebra for a fairly broad class of
+-- functors (copointed ones; that is, ones which always contain a principal value).
+copointedPPLAlgebra 
+    :: (Functor f, Copointed f) 
+    => f (PropertyListS (PartialPropertyList a)) 
+    -> PartialPropertyList a
+copointedPPLAlgebra = inPPL . copoint
+
+instance PListAlgebra Identity (PartialPropertyList a) where
+    plistAlgebra = copointedPPLAlgebra
 
 instance PListAlgebra Maybe (PartialPropertyList ()) where
-    plistAlgebra Nothing  = point ()
-    plistAlgebra (Just x) = inPPL x
+    plistAlgebra = maybe (point ()) inPPL
 
 instance PListAlgebra (Either a) (PartialPropertyList a) where
-    plistAlgebra (Left  x) = point x
-    plistAlgebra (Right x) = inPPL x
+    plistAlgebra = either point inPPL
 
 instance InitialPList (Either a) (PartialPropertyList a) where
 

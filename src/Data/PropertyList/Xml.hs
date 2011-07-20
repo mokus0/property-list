@@ -19,7 +19,6 @@ module Data.PropertyList.Xml
     
     ) where
 
-import Data.Copointed
 import Data.PropertyList.Algebra
 import Data.PropertyList.Types
 import Data.PropertyList.Xml.Parse
@@ -57,17 +56,10 @@ readXmlPropertyList str = do
     x <- readXmlPartialPropertyList str :: Either String (PartialPropertyList UnparsedPlistItem)
     completePropertyListByM (\unparsed -> Left ("Unparseable item found: " ++ show unparsed) :: Either String PropertyList) x
 
---readXmlPropertyList :: String -> PropertyList
---readXmlPropertyList
---    = runIdentity
---    . completePropertyListByM (\_ -> fail "parse error" :: Identity PropertyList)
---    . either error id
---    . (readXmlPartialPropertyList :: String -> Either String (PartialPropertyList UnparsedPlistItem))
-
 -- |Render a propertylist to a 'String' in the xml1 plist format from any
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
-showXmlPropertyList :: (InitialPList f pl, Functor f, Copointed f) => pl -> String
+showXmlPropertyList :: (InitialPList f pl, PListAlgebra f PlistItem) => pl -> String
 showXmlPropertyList
     = showXmlPlist
     . plistItemToPlist
@@ -98,8 +90,6 @@ readXmlPropertyListFromFile file = do
 -- |Output a propertylist to a file in the xml1 plist format from any
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
-writeXmlPropertyListToFile
-  :: (InitialPList f pl, Functor f, Copointed f) =>
-     FilePath -> pl -> IO ()
+writeXmlPropertyListToFile :: FilePath -> PropertyList -> IO ()
 writeXmlPropertyListToFile file plist = do
         writeXmlPlistToFile file (plistItemToPlist (fromPlist plist))

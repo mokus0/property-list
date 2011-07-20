@@ -1,6 +1,5 @@
 {-# LANGUAGE
     MultiParamTypeClasses,
-    TypeSynonymInstances,
     FlexibleInstances,
     TemplateHaskell, CPP,
     ViewPatterns
@@ -17,9 +16,8 @@ import Data.PropertyList.Algebra
 import Data.PropertyList.Types
 
 import qualified Data.Map as M
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as Lazy (ByteString)
-import Data.ByteString.Class
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import Data.Time
 import Data.Char
 import Data.Int
@@ -47,6 +45,11 @@ tryToIntegral :: (RealFrac a, Integral b) => a -> Maybe b
 tryToIntegral d = case properFraction d of
     (i, 0) -> Just i
     _ -> Nothing
+
+toStrictByteString :: BL.ByteString -> BS.ByteString
+toStrictByteString = BS.concat . BL.toChunks
+toLazyByteString :: BS.ByteString -> BL.ByteString
+toLazyByteString = BL.fromChunks . return
 
 -- |A class for items which can be converted to and from property lists.  This
 -- is more general than 'PListAlgebra' and 'PListCoalgebra', in that it allows
@@ -94,16 +97,16 @@ instance PropertyListItem PropertyList where
     toPropertyList = id
     fromPropertyList = Just
 
-instance PropertyListItem ByteString where
+instance PropertyListItem BS.ByteString where
     toPropertyList = plData
     fromPropertyList (fromPlData    -> Just x) = Just x
-    fromPropertyList (fromPlString  -> Just x) = Just (toStrictByteString x)
+--    fromPropertyList (fromPlString  -> Just x) = Just (toStrictByteString x)
     fromPropertyList _ = Nothing
 
-instance PropertyListItem Lazy.ByteString where
+instance PropertyListItem BL.ByteString where
     toPropertyList = plData . toStrictByteString
     fromPropertyList (fromPlData    -> Just x) = Just (toLazyByteString x)
-    fromPropertyList (fromPlString  -> Just x) = Just (toLazyByteString x)
+--    fromPropertyList (fromPlString  -> Just x) = Just (toLazyByteString x)
     fromPropertyList _ = Nothing
 
 instance PropertyListItem UTCTime where
@@ -163,7 +166,7 @@ instance PropertyListItem Char where
     
     listToPropertyList = plString
     listFromPropertyList (fromPlString -> Just x)     = Just x
-    listFromPropertyList (fromPlData   -> Just x)     = Just (fromStrictByteString x)
+--    listFromPropertyList (fromPlData   -> Just x)     = Just (fromStrictByteString x)
     listFromPropertyList (fromPlBool   -> Just True)  = Just "YES"
     listFromPropertyList (fromPlBool   -> Just False) = Just "NO"
     listFromPropertyList (fromPlInt    -> Just i)     = Just (show i)

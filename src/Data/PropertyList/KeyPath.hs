@@ -1,6 +1,3 @@
-{-# LANGUAGE
-        ViewPatterns
-  #-}
 module Data.PropertyList.KeyPath 
     ( alterItemAtKeyPathM, alterItemAtKeyPath
     , getItemAtKeyPath, setItemAtKeyPath
@@ -75,13 +72,14 @@ tryAlterDictionaryEntryM ::
     (Monad m, PropertyListItem i, PropertyListItem i') 
     => String -> (Maybe i -> m (Maybe i'))
     -> Maybe PropertyList -> m (Maybe PropertyList)
-tryAlterDictionaryEntryM k f Nothing = do
-    d' <- alterDictionaryEntryM k f Nothing
-    return (fmap plDict d')
-tryAlterDictionaryEntryM k f (Just (fromPlDict -> Just d)) = do
-    d' <- alterDictionaryEntryM k f (Just d)
-    return (fmap plDict d')
-tryAlterDictionaryEntryM k f other = fail "Key path tries to pass through non-dictionary thing."
+tryAlterDictionaryEntryM k f mbPl = 
+    case fmap fromPlDict mbPl of
+        -- outer 'Maybe' is 'Just' if a plist was provided, 
+        -- inner is 'Just' if that plist is a dictionary.
+        Just (Just d)   -> alterDict (Just d)
+        Nothing         -> alterDict Nothing
+        Just Nothing    -> fail "Key path tries to pass through non-dictionary thing."
+    where alterDict = liftM (fmap plDict) . alterDictionaryEntryM k f
 
 -- |@alterItemAtKeyPathM path f@ applies the function @f@ deep inside the 
 -- 'PropertyList' on the property list item at the given key-path @path@
