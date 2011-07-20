@@ -23,9 +23,9 @@ linearize = intern . absolutize . fromPlist
 -- |Take some 'BPListRecords' using relative addressing and change them to use absolute addressing
 absolutize :: BPListRecords Rel -> BPListRecords Abs
 absolutize (BPListRecords root recs) =
-    BPListRecords root (S.mapWithIndex (shiftRec . fromIntegral) recs)
+    BPListRecords root (S.mapWithIndex shiftRec recs)
     where
-        shiftRec i = mapObjRefs (i+)
+        shiftRec i = mapObjRefs (fromIntegral i +)
 
 -- |Take some 'BPListRecords' using absolute addressing and eliminate 
 -- all duplicate records, compact the table and update all internal
