@@ -157,7 +157,7 @@ putString str
         putByteString (BSC8.pack str)
     | otherwise         = do
         let utf16 = Text.encodeUtf16BE (Text.pack str)
-        putMarkerWithSize 0x6 (BS.length utf16)
+        putMarkerWithSize 0x6 (BS.length utf16 `shiftR` 1)
         putByteString utf16
 
 
