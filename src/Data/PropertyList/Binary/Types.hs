@@ -22,18 +22,11 @@ data BPListRecord
     | BPLBool Bool
     deriving (Eq, Ord, Show)
 
+mapObjRefs :: (Word64 -> Word64) -> BPListRecord -> BPListRecord
 mapObjRefs f (BPLArray   xs)  = BPLArray (map f xs)
 mapObjRefs f (BPLSet     xs)  = BPLSet   (map f xs)
 mapObjRefs f (BPLDict ks vs)  = BPLDict  (map f ks) (map f vs)
-mapObjRefs f BPLNull          = BPLNull
-mapObjRefs f BPLFill          = BPLFill
-mapObjRefs f (BPLData     x)  = BPLData   x
-mapObjRefs f (BPLDate     x)  = BPLDate   x
-mapObjRefs f (BPLReal     x)  = BPLReal   x
-mapObjRefs f (BPLInt      x)  = BPLInt    x
-mapObjRefs f (BPLString   x)  = BPLString x
-mapObjRefs f (BPLUID      x)  = BPLUID    x
-mapObjRefs f (BPLBool     x)  = BPLBool   x
+mapObjRefs f other = other
 
 data UnparsedBPListRecord
     = UnparsedNull

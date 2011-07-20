@@ -27,10 +27,7 @@ absolutize :: BPListRecords Rel -> BPListRecords Abs
 absolutize (BPListRecords root recs) =
     BPListRecords root (S.mapWithIndex (shiftRec . fromIntegral) recs)
     where
-        shiftRec i (BPLArray xs  ) = BPLArray (map (i+) xs)
-        shiftRec i (BPLSet xs    ) = BPLSet   (map (i+) xs)
-        shiftRec i (BPLDict ks vs) = BPLDict  (map (i+) ks) (map (i+) vs)
-        shiftRec i other = other
+        shiftRec i = mapObjRefs (i+)
 
 -- |Take some 'BPListRecords' using absolute addressing and eliminate 
 -- all duplicate records, compact the table and update all internal
