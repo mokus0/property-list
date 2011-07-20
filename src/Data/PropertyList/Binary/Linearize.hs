@@ -5,8 +5,7 @@ module Data.PropertyList.Binary.Linearize
     , delinearize
     ) where
 
-import Control.Monad
-import Control.Monad.ST.Lazy
+import qualified Data.Foldable as F
 import qualified Data.Map as M
 import Data.Maybe
 import Data.PropertyList.Types
@@ -14,7 +13,6 @@ import Data.PropertyList.Algebra
 import Data.PropertyList.Binary.Algebra ({- instances-})
 import Data.PropertyList.Binary.Types
 import Data.Sequence as S
-import Data.STRef.Lazy
 import Prelude as P
 
 -- |Flatten a 'PropertyList' to a sequence of 'BPListRecords'.  The resulting records will
@@ -32,40 +30,32 @@ absolutize (BPListRecords root recs) =
 -- |Take some 'BPListRecords' using absolute addressing and eliminate 
 -- all duplicate records, compact the table and update all internal
 -- references.
+--
+-- Does not necessarily yield a totally deduplicated table; The process
+-- of interning can introduce duplicate records (because it alters arrays,
+-- dicts and sets).  All other node types will be deduplicated in one pass,
+-- though, which is usually sufficient.
 intern :: BPListRecords Abs -> BPListRecords Abs
 intern (BPListRecords root recs) = BPListRecords (reloc root) recs'
     where
-        reloc i = M.findWithDefault noReloc i relocs
-            where noReloc = error ("intern: internal error: no relocation for index " ++ show i)
-        (relocs, recs') = runST $ do
-            index   <- newSTRef M.empty
-            relocs  <- newSTRef M.empty
-            
-            let updateRec n' x = do
-                    let n = fromIntegral n'
-                    recTable <- readSTRef index
-                    case M.lookup x recTable of
-                        Nothing     -> do
-                            let nRecs = fromIntegral (M.size recTable)
-                            modifySTRef relocs (M.insert n nRecs)
-                            writeSTRef index (M.insert x nRecs recTable)
-                            return (Just (mapObjRefs reloc x))
-                        Just loc    -> do
-                            modifySTRef relocs (M.insert n loc)
-                            return Nothing
-            recs <- updateWithIndexM updateRec recs
-            
-            relocs <- readSTRef relocs
-            return (relocs, recs)
-
-updateWithIndexM :: Monad m => (Int -> a -> m (Maybe b)) -> Seq a -> m (Seq b)
-updateWithIndexM f = S.foldrWithIndex g (return S.empty)
-    where
-        g n x xs = do
-            mbX <- f n x
-            case mbX of
-                Nothing -> xs
-                Just x'  -> liftM (x' <|) xs
+        reloc i'
+            | i < 0 || i >= n   = error ("intern: reference out of bounds: " ++ show i)
+            | otherwise         = S.index relocs i
+            where i = fromIntegral i'; n = S.length recs
+        
+        (_, relocs, recs') =
+            F.foldl updateRec (M.empty, S.empty, S.empty) recs
+        
+        updateRec (index, relocs, recs) x = 
+            case M.lookup x index of
+                Nothing -> 
+                    let nRecs = fromIntegral (S.length recs)
+                     in ( M.insert x nRecs index
+                        , relocs |> nRecs
+                        , recs   |> mapObjRefs reloc x
+                        )
+                Just loc ->
+                    ( index, relocs |> loc, recs)
 
 -- TODO: check for cycles?
 -- |Reconstruct a property list from a collection of 'BPListRecords'
