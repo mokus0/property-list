@@ -2,12 +2,12 @@ module Data.PropertyList.Binary.Parse where
 
 import Control.Applicative
 import Control.Monad
-import Data.Attoparsec as Atto
+import Data.Attoparsec.Lazy as Atto hiding (parseOnly)
 import Data.Attoparsec.Binary as Atto
 import Data.Binary.IEEE754
 import Data.Bits
-import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC8
+import qualified Data.ByteString.Lazy as BL
 import Data.PropertyList.Binary.Types
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -21,27 +21,30 @@ import GHC.Float
 -- even if that means switching to something else (Parsec?).  Or just give up on nice error handling
 -- and use binary?
 
+parseOnly p = eitherResult . parse p
+
 rawBPList bs = do
-    let headerBS = BS.take 8 bs
+    let headerBS = BL.take 8 bs
     header@(BPListHeader version) <- parseOnly bplistHeader headerBS
     when (version .&. 0xff00 /= 0x3000) $
         Left "Unsupported bplist version"
     
-    let trailerBS = BS.drop (BS.length bs - bplistTrailerBytes) bs
+    let trailerBS = BL.drop (BL.length bs - bplistTrailerBytes) bs
     trailer <- parseOnly bplistTrailer trailerBS
     
     --TODO: sanity checks
-    let nOffsets        = fromIntegral (numObjects trailer)
+    let nOffsets :: Num a => a
+        nOffsets        = fromIntegral (numObjects trailer)
         bytesPerOffset  = fromIntegral (offsetIntSize trailer)
         offsetsBS
-            = BS.take (nOffsets * fromIntegral bytesPerOffset)
-            . BS.drop (fromIntegral (offsetTableOffset trailer))
+            = BL.take (nOffsets * fromIntegral bytesPerOffset)
+            . BL.drop (fromIntegral (offsetTableOffset trailer))
             $ bs
     offsets <- parseOnly (replicateM nOffsets (sizedInt bytesPerOffset)) offsetsBS
     
     return (RawBPList bs header (V.fromList offsets) trailer)
 
-readBPListRecords :: BS.ByteString -> Either String (BPListRecords Abs)
+readBPListRecords :: BL.ByteString -> Either String (BPListRecords Abs)
 readBPListRecords bs = do
     raw <- rawBPList bs
     let tlr  = rawTrailer raw
@@ -52,7 +55,7 @@ readBPListRecords bs = do
 
 getBPListRecord (RawBPList bs _hdr offsets tlr) objNum
     | objNum >= 0 && fromIntegral objNum < V.length offsets
-    = parseOnly (bplistRecord objRef) (BS.drop (fromIntegral (offsets V.! fromIntegral objNum)) bs)
+    = parseOnly (bplistRecord objRef) (BL.drop (fromIntegral (offsets V.! fromIntegral objNum)) bs)
     
     | otherwise = Left "getBPListRecord: index out of range"
     where

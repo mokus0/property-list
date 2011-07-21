@@ -1,7 +1,8 @@
 {-# LANGUAGE EmptyDataDecls #-}
 module Data.PropertyList.Binary.Types where
 
-import Data.ByteString (ByteString)
+import qualified Data.ByteString      as BS (ByteString)
+import qualified Data.ByteString.Lazy as BL (ByteString)
 import Data.Sequence (Seq)
 import Data.Time (UTCTime)
 import Data.Vector.Unboxed (Vector)
@@ -12,7 +13,7 @@ data BPListRecord
     | BPLFill
     | BPLArray [Word64]
     | BPLSet [Word64]
-    | BPLData ByteString
+    | BPLData BS.ByteString
     | BPLDate UTCTime
     | BPLDict [Word64] [Word64]
     | BPLReal Double
@@ -45,7 +46,7 @@ data BPListRecords mode = BPListRecords
     } deriving (Eq, Ord, Show)
 
 data RawBPList = RawBPList
-    { rawFile    :: ByteString
+    { rawFile    :: BL.ByteString
     , rawHeader  :: BPListHeader
     , rawOffsets :: Vector Word64
     , rawTrailer :: BPListTrailer
