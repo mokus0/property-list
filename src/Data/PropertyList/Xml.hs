@@ -1,16 +1,8 @@
-{-# LANGUAGE
-        FlexibleContexts
-  #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ViewPatterns #-}
 module Data.PropertyList.Xml
-    ( Plist
-    , readXmlPlist, showXmlPlist
-    , readXmlPlistFromFile, writeXmlPlistToFile
-    
-    , PlistItem
-    , plistToPlistItem, plistItemToPlist
-    
-    , UnparsedPlistItem(..)
-    , unparsedPlistItemToPlistItem
+    ( UnparsedXmlPlistItem(..)
+    , unparsedXmlPlistItemToElement
     
     , readXmlPropertyList, readXmlPropertyListFromFile
     
@@ -19,51 +11,40 @@ module Data.PropertyList.Xml
     
     ) where
 
+import Control.Monad.Error ({- instance Monad (Either e) -})
 import Data.PropertyList.Algebra
 import Data.PropertyList.Types
-import Data.PropertyList.Xml.Parse
-import Data.PropertyList.Xml.Types
-
-import Control.Monad.Error ({- instance Monad (Either String) -})
-
--- * Reading and writing XML 'Plist's from files
-
--- |Try to parse a 'Plist' from an XML property-list file.
-readXmlPlistFromFile :: FilePath -> IO (Either String Plist)
-readXmlPlistFromFile path = do
-        contents <- readFile path
-        return (readXmlPlist contents)
-
--- |Try to write a 'Plist' to an XML property-list file.
-writeXmlPlistToFile :: FilePath -> Plist -> IO ()
-writeXmlPlistToFile path plist = do
-        writeFile path (showXmlPlist plist)
-
+import Data.PropertyList.Xml.Algebra
+import Text.XML.Light
 
 -- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from 'String's
 
--- |Read an XML propertylist from a 'String' in the xml1 plist format to a
--- propertylist type which is terminal for the liftings supported by
--- 'PlistItem'  (such as @'PartialPropertyList' 'UnparsedPlistItem'@
--- or @'PartialPropertyList' 'PlistItem'@).
-readXmlPartialPropertyList :: (PListCoalgebra f PlistItem, TerminalPList f pl) => String -> Either String pl
-readXmlPartialPropertyList = fmap (toPlist . plistToPlistItem) . readXmlPlist
+-- |Read an XML property list from a 'String' in the xml1 plist format, leaving 
+-- unparseable elements in the tree.
+readXmlPartialPropertyList :: String -> Either String (PartialPropertyList UnparsedXmlPlistItem)
+readXmlPartialPropertyList str = case parseXMLDoc str of
+    Just (Element (QName "plist" _ _) attrs (onlyElems -> [root]) _)
+        | all isCompatibleVersionAttr attrs
+            -> Right (toPlist root)
+    Just e  -> Right (toPlist e)
+    Nothing -> Left "not an XML document"
+    where
+        isCompatibleVersionAttr (Attr (QName "version" _ _) "1.0") = True
+        isCompatibleVersionAttr _ = False
 
 -- |Read a property list from a 'String' in the xml1 format.  If parsing
 -- fails, returns a description of the problem in the 'Left' result.
 readXmlPropertyList :: String -> Either String PropertyList
-readXmlPropertyList str = do
-    x <- readXmlPartialPropertyList str :: Either String (PartialPropertyList UnparsedPlistItem)
-    completePropertyListByM (\unparsed -> Left ("Unparseable item found: " ++ show unparsed) :: Either String PropertyList) x
+readXmlPropertyList str
+    =   readXmlPartialPropertyList str 
+    >>= completePropertyListByM barf
+        where barf unparsed = Left ("Unparseable item found: " ++ show unparsed) :: Either String PropertyList
 
 -- |Render a propertylist to a 'String' in the xml1 plist format from any
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
-showXmlPropertyList :: (InitialPList f pl, PListAlgebra f PlistItem) => pl -> String
-showXmlPropertyList
-    = showXmlPlist
-    . plistItemToPlist
-    . fromPlist
+showXmlPropertyList :: (InitialPList f pl, PListAlgebra f Element) => pl -> String
+showXmlPropertyList = ppTopElement . fromPlist
 
 
 -- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from files
@@ -72,24 +53,22 @@ showXmlPropertyList
 -- partial propertylist which is structurally sound but may contain some 
 -- unparseable nodes.
 readXmlPartialPropertyListFromFile
-  :: FilePath -> IO (PartialPropertyList UnparsedPlistItem)
+  :: FilePath -> IO (PartialPropertyList UnparsedXmlPlistItem)
 readXmlPartialPropertyListFromFile file = do
-        x <- readXmlPlistFromFile file
-        either fail (return . toPlist . plistToPlistItem) x
+    x <- readFile file
+    either fail return (readXmlPartialPropertyList x)
 
 -- |Read a property list from a file in the xml1 format.  If parsing fails,
 -- calls 'fail'.
 readXmlPropertyListFromFile :: FilePath -> IO PropertyList
 readXmlPropertyListFromFile file = do
-    x <- readXmlPartialPropertyListFromFile file
-    completePropertyListByM barf x
-    where
-        barf unparsed = fail ("Unparseable item found: " ++ show unparsed) :: IO PropertyList
+    x <- readFile file
+    either fail return (readXmlPropertyList x)
     
 
 -- |Output a propertylist to a file in the xml1 plist format from any
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
 writeXmlPropertyListToFile :: FilePath -> PropertyList -> IO ()
-writeXmlPropertyListToFile file plist = do
-        writeXmlPlistToFile file (plistItemToPlist (fromPlist plist))
+writeXmlPropertyListToFile file plist =
+    writeFile file (showXmlPropertyList plist)

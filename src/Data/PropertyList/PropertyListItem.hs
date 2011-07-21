@@ -23,7 +23,7 @@ import Data.Char
 import Data.Int
 import Data.Word
 
-import Text.XML.HaXml.OneOfN
+import Data.OneOfN
 
 import Control.Monad
 import Control.Monad.Identity

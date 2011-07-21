@@ -18,10 +18,6 @@ source-repository head
   type:                 git
   location:             git://github.com/mokus0/property-list.git
 
-flag HaXml_1_13
-  default:              False
-  description:          Compile against HaXml 1.13 rather than the latest.
-
 Library
   hs-source-dirs:       src
   ghc-options:          -fwarn-unused-binds -fwarn-unused-imports
@@ -38,8 +34,7 @@ Library
                         Data.PropertyList.Binary.Types
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.KeyPath
-                        Data.PropertyList.Xml.Parse
-                        Data.PropertyList.Xml.Types
+                        Data.PropertyList.Xml.Algebra
   build-depends:        base >= 4 && <5,
                         attoparsec,
                         attoparsec-binary,
@@ -51,6 +46,7 @@ Library
                         free >= 1.8,
                         mtl,
                         old-locale,
+                        oneOfN,
                         pointed >= 1.8,
                         pretty,
                         recursion-schemes >= 1.8,
@@ -60,14 +56,5 @@ Library
                         time,
                         th-fold,
                         vector,
-                        void
-
-  if flag(HaXml_1_13)
-    other-modules:      Data.PropertyList.Xml.Dtd_1_13
-    cpp-options:        -DHaXml_1_13
-    build-depends:      HaXml >= 1.13 && <1.14
-                        
-  else
-    other-modules:      Data.PropertyList.Xml.Dtd
-    build-depends:      HaXml >= 1.19
-    build-depends:      HaXml < 1.22 || > 1.22
+                        void,
+                        xml

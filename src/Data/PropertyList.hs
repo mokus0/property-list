@@ -14,14 +14,13 @@ module Data.PropertyList
       -- into their overall shape but not all elements have been parsed into
       -- their final format.
       -- 
-      -- The 'UnparsedPlistItem' type is the type most often used with
-      -- 'PartialPropertyList', and that is really its only purpose - to
-      -- represent unparseable items from an XML plist during intermediate
-      -- stages of translation.
+      -- The 'UnparsedXmlPlistItem' and 'UnparsedBPListRecord' types are used
+      -- with 'PartialPropertyList', and that is really their only purpose - to
+      -- represent unparseable items during intermediate stages of translation.
       PropertyList
     , PartialPropertyList
-    , PropertyListS(..)
-    , UnparsedPlistItem(..)
+    , UnparsedBPListRecord(..)
+    , UnparsedXmlPlistItem(..)
       
     -- * Constructors and destructors for property lists
     -- |The \"pl*\" operations construct 'PropertyList's, 'PartialPropertyList's, 
@@ -151,7 +150,7 @@ readPropertyListFromFile file = do
         Right bin -> completePropertyListByM barf bin
     where
         readPartial :: FilePath -> IO (Either
-            (PartialPropertyList UnparsedPlistItem)
+            (PartialPropertyList UnparsedXmlPlistItem)
             (PartialPropertyList UnparsedBPListRecord))
         readPartial file = do
             mbPartial <- try (readBinaryPartialPropertyListFromFile file)

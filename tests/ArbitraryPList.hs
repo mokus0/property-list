@@ -35,7 +35,9 @@ instance Arbitrary a => Arbitrary (PropertyListS a) where
         ]
         where
             shrinkingListOf xs = sized $ \sz -> do
-                sizes <- listOf (choose (1, max 1 sz))
+                let lSz = max 1 (floor (sqrt (fromIntegral sz)))
+                n     <- choose (1, lSz)
+                sizes <- vectorOf n (choose (1, lSz))
                 sequence [resize (s `div` sum sizes) xs | s <- sizes]
                 
 
