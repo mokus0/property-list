@@ -21,6 +21,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Time
 import Data.Char
 import Data.Int
+import qualified Data.Text as Text
 import Data.Word
 
 import Data.OneOfN
@@ -172,6 +173,10 @@ instance PropertyListItem Char where
     listFromPropertyList (fromPlInt    -> Just i)     = Just (show i)
     listFromPropertyList (fromPlReal   -> Just d)     = Just (show d)
     listFromPropertyList other = Nothing
+
+instance PropertyListItem Text.Text where
+    toPropertyList = toPropertyList . Text.unpack
+    fromPropertyList = fmap Text.pack . fromPropertyList
 
 instance PropertyListItem Bool where
     toPropertyList = plBool
