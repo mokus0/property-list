@@ -3,14 +3,13 @@ module Data.PropertyList.KeyPath
     , getItemAtKeyPath, setItemAtKeyPath
     ) where
 
-import Data.PropertyList.Algebra
-import Data.PropertyList.Types (PropertyList)
-import Data.PropertyList.PropertyListItem
-
+import Control.Monad
+import Control.Monad.Trans.State
+import Data.Functor.Identity
 import qualified Data.Map as M
-
-import Control.Monad.Identity
-import Control.Monad.State
+import Data.PropertyList.Algebra
+import Data.PropertyList.PropertyListItem
+import Data.PropertyList.Types (PropertyList)
 
 -- |Alter a @'Maybe' 'PropertyList'@, viewing it as an instance of 'PropertyListItem'
 -- and re-synthesizing it from a (possibly different) instance of 'PropertyListItem'.

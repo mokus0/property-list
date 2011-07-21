@@ -3,7 +3,7 @@
 module ArbitraryPList where
 
 import Control.Applicative
-import Control.Monad.Identity
+import Data.Functor.Identity
 import qualified Data.ByteString as BS
 import qualified Data.Map as M
 import Data.PropertyList

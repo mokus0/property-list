@@ -11,7 +11,7 @@ module Data.PropertyList.Xml
     
     ) where
 
-import Control.Monad.Error ({- instance Monad (Either e) -})
+import Control.Monad.Instances ({- instance Monad (Either e) -})
 import Data.PropertyList.Algebra
 import Data.PropertyList.Types
 import Data.PropertyList.Xml.Algebra

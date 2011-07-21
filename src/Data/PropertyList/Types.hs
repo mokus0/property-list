@@ -31,14 +31,11 @@ import Data.PropertyList.Algebra
 import Control.Applicative      (Applicative(..))
 import Data.Functor.Foldable    (Fix(..))
 import qualified Data.Functor.Foldable as RS
-import Data.Pointed             (Pointed(..))
-import Data.Copointed           (Copointed(..))
 import Control.Monad            (liftM)
 import Control.Monad.Free       (Free(..))
-import Control.Monad.Identity   (Identity(..))
+import Data.Functor.Identity    (Identity(..))
 import Data.Foldable            (Foldable)
 import Data.Traversable         (Traversable(traverse), mapM)
-import Data.Void                (Void, absurd)
 
 import Unsafe.Coerce            (unsafeCoerce) {- used _only_ to eliminate fmap traversals for newtype constructors -}
 
@@ -77,25 +74,17 @@ outPL :: PropertyList -> PropertyListS PropertyList
 outPL = fmap PL . outF . unPL
     where outF (Fix x) = x
 
--- |A default PartialPropertyList plistAlgebra for a fairly broad class of
--- functors (copointed ones; that is, ones which always contain a principal value).
-copointedPLAlgebra 
-    :: (Functor f, Copointed f) 
-    => f (PropertyListS PropertyList) 
-    -> PropertyList
-copointedPLAlgebra = inPL . copoint
-
 instance PListAlgebra Identity PropertyList where
-    plistAlgebra = copointedPLAlgebra
+    plistAlgebra = inPL . runIdentity
 
 instance PListCoalgebra Identity a => PListAlgebra (Either a) PropertyList where
     plistAlgebra = either toPlist (plistAlgebra . Identity)
 
 instance InitialPList Identity PropertyList
 
-instance (Functor f, Pointed f) => PListCoalgebra f PropertyList where
+instance Applicative f => PListCoalgebra f PropertyList where
     {-# SPECIALIZE instance PListCoalgebra Identity PropertyList #-}
-    plistCoalgebra = point . outPL
+    plistCoalgebra = pure . outPL
 
 instance TerminalPList Identity PropertyList
 
@@ -109,9 +98,6 @@ newtype PartialPropertyList a = PPL {unPPL :: Free PropertyListS a}
 "fmap unPPl -> unsafeCoerce"     fmap unPPL = unsafeCoerce
   #-}
 
-
-instance Pointed PartialPropertyList where
-    point = PPL . Pure
 
 -- | [internal] 'Free' constructor specialized to 'PartialPropertyList'.
 -- 'point'/'pure'/'return' is the corresponding 'Pure' constructor.
@@ -134,22 +120,14 @@ instance Show a => Show (PartialPropertyList a) where
 -- instance Read...
 
 
--- |A default PartialPropertyList plistAlgebra for a fairly broad class of
--- functors (copointed ones; that is, ones which always contain a principal value).
-copointedPPLAlgebra 
-    :: (Functor f, Copointed f) 
-    => f (PropertyListS (PartialPropertyList a)) 
-    -> PartialPropertyList a
-copointedPPLAlgebra = inPPL . copoint
-
 instance PListAlgebra Identity (PartialPropertyList a) where
-    plistAlgebra = copointedPPLAlgebra
+    plistAlgebra = inPPL . runIdentity
 
 instance PListAlgebra Maybe (PartialPropertyList ()) where
-    plistAlgebra = maybe (point ()) inPPL
+    plistAlgebra = maybe (pure ()) inPPL
 
 instance PListAlgebra (Either a) (PartialPropertyList a) where
-    plistAlgebra = either point inPPL
+    plistAlgebra = either pure inPPL
 
 instance InitialPList (Either a) (PartialPropertyList a) where
 
@@ -200,7 +178,3 @@ completePropertyListBy f = fmap completePropertyList . traverse f
 completePropertyListByM :: (Monad m, PListCoalgebra Identity b)
     => (a -> m b) -> PartialPropertyList a -> m PropertyList
 completePropertyListByM f = liftM completePropertyList . Data.Traversable.mapM f
-
--- instance for Void to allow it to be used as @a@ in 'completePropertyList':
-instance Functor f => PListCoalgebra f Void where
-    plistCoalgebra = absurd

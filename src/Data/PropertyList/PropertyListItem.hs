@@ -10,7 +10,6 @@ module Data.PropertyList.PropertyListItem
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
-import Language.Haskell.TH.Fold
 
 import Data.PropertyList.Algebra
 import Data.PropertyList.Types
@@ -27,7 +26,7 @@ import Data.Word
 import Data.OneOfN
 
 import Control.Monad
-import Control.Monad.Identity
+import Data.Functor.Identity
 import qualified Data.Traversable as Traversable
 import Data.Generics
 
@@ -192,7 +191,7 @@ instance PropertyListItem Bool where
 --  (N in [2..20]), an instance of the form:
 -- 
 -- instance (PropertyListItem a, PropertyListItem b, PropertyListItem c) => PropertyListItem (OneOf3 a b c) where
---     toPropertyList = $(fold ''OneOf3) toPropertyList toPropertyList toPropertyList
+--     toPropertyList = oneOf3 toPropertyList toPropertyList toPropertyList
 --     fromPropertyList pl = msum [ fmap OneOf3 (fromPropertyList pl)
 --                                , fmap TwoOf3 (fromPropertyList pl)
 --                                , fmap ThreeOf3 (fromPropertyList pl)
@@ -228,6 +227,8 @@ $(  let types = ''Either : [mkTcName ("OneOf" ++ show n) | n <- [2..20]]
                     , funD 'fromPropertyList [clause [varP pl] (normalB fromPLbody) []]
                     ]
                 
+                lcFirst (c:cs) = toLower c : cs
+                fold  = varE . mkName . lcFirst . nameBase
                 toPLbody = appsE (fold typeName : map (const (varE 'toPropertyList)) conNames)
                 fromPLbody = appE (varE 'msum) $ listE
                     [ [| fmap $(conE con) (fromPropertyList $(varE pl)) |]

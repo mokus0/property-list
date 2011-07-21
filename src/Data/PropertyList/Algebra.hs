@@ -1,8 +1,6 @@
-{-# LANGUAGE 
-    MultiParamTypeClasses, FunctionalDependencies,
-    TemplateHaskell,
-    FlexibleContexts
-  #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- |The internal \"algebraic\" interface for working with property-list-like
 -- things.  The classes defined here are the basis for a very general system
@@ -31,16 +29,13 @@
 module Data.PropertyList.Algebra where
 
 import Control.Applicative
-import Control.Monad.Identity
-import Data.Foldable (Foldable(foldMap))
-import Data.Traversable (Traversable(..))
-import Data.Monoid
-
-import Language.Haskell.TH.Fold (fold)
-
-import qualified Data.Map as M
+import Data.Functor.Identity
 import Data.ByteString as B hiding (map)
+import Data.Foldable (Foldable(foldMap))
+import qualified Data.Map as M
+import Data.Monoid
 import Data.Time
+import Data.Traversable (Traversable(..))
 
 -- * The signature type ('PropertyListS')
 
@@ -92,7 +87,16 @@ foldPropertyListS :: ([a] -> t)
                   -> (String -> t)
                   -> (Bool -> t) 
                   -> PropertyListS a -> t
-foldPropertyListS = $(fold ''PropertyListS)
+foldPropertyListS plArray plData plDate plDict plReal plInt plString plBool pl =
+    case pl of
+        PLArray   x -> plArray   x
+        PLData    x -> plData    x
+        PLDate    x -> plDate    x
+        PLDict    x -> plDict    x
+        PLReal    x -> plReal    x
+        PLInt     x -> plInt     x
+        PLString  x -> plString  x
+        PLBool    x -> plBool    x
 
 instance Functor PropertyListS where
     fmap f = foldPropertyListS (PLArray . fmap f) PLData PLDate (PLDict . fmap f) PLReal PLInt PLString PLBool

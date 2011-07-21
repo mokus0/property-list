@@ -1,6 +1,6 @@
 module CloseEnough where
 
-import Control.Monad.Identity
+import Data.Functor.Identity
 import Data.ByteString (ByteString)
 import qualified Data.Map as M
 import Data.PropertyList

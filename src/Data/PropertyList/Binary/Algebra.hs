@@ -3,7 +3,7 @@
 module Data.PropertyList.Binary.Algebra where
 
 import Data.Monoid
-import Control.Monad.Identity
+import Data.Functor.Identity
 import Data.PropertyList.Algebra
 import Data.PropertyList.Binary.Types
 import Data.Sequence as S ((<|), (><))

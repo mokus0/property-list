@@ -8,7 +8,7 @@ module Data.PropertyList.Xml.Algebra
 
 import qualified Data.ByteString as BS
 import qualified Codec.Binary.Base64 as B64
-import Control.Monad.Identity
+import Data.Functor.Identity
 import qualified Data.Map as M
 import Data.PropertyList.Algebra
 import Data.Time
