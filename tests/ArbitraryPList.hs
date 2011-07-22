@@ -18,7 +18,7 @@ instance Arbitrary Day where
 instance Arbitrary DiffTime where
     arbitrary = fromRational <$> arbitrary
 instance Arbitrary UTCTime where
-    arbitrary = UTCTime <$> arbitrary <*> arbitrary
+    arbitrary = read . show <$> (UTCTime <$> arbitrary <*> arbitrary)
 instance (Ord k, Arbitrary k, Arbitrary v) => Arbitrary (M.Map k v) where
     arbitrary = M.fromList <$> arbitrary
 

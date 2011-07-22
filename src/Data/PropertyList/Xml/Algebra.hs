@@ -15,7 +15,7 @@ import System.Locale
 import Text.XML.Light
 
 dateFormat :: String
-dateFormat = "%FT%TZ"
+dateFormat = "%FT%T%QZ"
 
 instance PListAlgebra Identity Element where
     plistAlgebra = toElem . runIdentity
