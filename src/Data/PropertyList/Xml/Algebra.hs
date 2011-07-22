@@ -6,7 +6,9 @@ module Data.PropertyList.Xml.Algebra
     ) where
 
 import qualified Data.ByteString as BS
-import qualified Codec.Binary.Base64 as B64
+import qualified Data.ByteString.Char8 as BSC8
+import qualified Data.ByteString.Base64 as B64
+import Data.Char (isSpace)
 import Data.Functor.Identity
 import qualified Data.Map as M
 import Data.PropertyList.Algebra
@@ -14,15 +16,20 @@ import Data.Time
 import System.Locale
 import Text.XML.Light
 
+-- "%FT%T%QZ" would be better, but apple's plist parser
+-- doesn't accept the fractional-seconds part.
 dateFormat :: String
 dateFormat = "%FT%T%QZ"
+
+b64encode :: BS.ByteString -> String
+b64encode = BSC8.unpack . B64.encode
 
 instance PListAlgebra Identity Element where
     plistAlgebra = toElem . runIdentity
         where
             toElem :: PropertyListS Element -> Element
             toElem (PLArray    x) = unode "array" x
-            toElem (PLData     x) = unode "data" (B64.encode (BS.unpack x))
+            toElem (PLData     x) = unode "data" (b64encode x)
             toElem (PLDate     x) = unode "date" (formatTime defaultTimeLocale dateFormat x)
             toElem (PLDict     x) = unode "dict" $ concat
                 [ [ unode "key" k, v]
@@ -56,6 +63,9 @@ unparsedXmlPlistItemToElement = toElem
         toElem (UnparsedReal x) = unode "real"    x
         toElem (UnparsedXml  e) = e
 
+b64decode :: String -> Either String BS.ByteString
+b64decode = B64.decode . BSC8.pack . filter (not . isSpace)
+
 instance PListAlgebra (Either Element) Element where
     plistAlgebra (Left x) = x
     plistAlgebra (Right x) = plistAlgebra (Identity x)
@@ -76,9 +86,9 @@ instance PListCoalgebra (Either UnparsedXmlPlistItem) Element where
                 = accept PLArray (onlyElems content)
             fromElem "data" content
                 = let contentText = text content
-                   in case B64.decode contentText of
-                        Just xs -> accept (PLData . BS.pack) xs
-                        Nothing -> reject UnparsedData contentText
+                   in case b64decode contentText of
+                        Right xs -> accept PLData xs
+                        Left  _  -> reject UnparsedData contentText
             fromElem "date" content
                 = let contentText = text content
                    in case parseTime defaultTimeLocale dateFormat contentText of

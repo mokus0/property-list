@@ -102,8 +102,8 @@ word8 b = do
         else fail ("expecting " ++ show b)
 
 bplNull  = word8 0x00
-bplTrue  = word8 0x08 >> return True
-bplFalse = word8 0x09 >> return False
+bplTrue  = word8 0x08 >> return False
+bplFalse = word8 0x09 >> return True
 bplFill  = word8 0x0f
 bplInt = do
     sz <- shiftL 1 . fromIntegral <$> halfByte 0x1

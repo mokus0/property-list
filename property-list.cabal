@@ -29,6 +29,7 @@ Library
   other-modules:        Data.PropertyList.Types
                         Data.PropertyList.Binary.Algebra
                         Data.PropertyList.Binary.Linearize
+                        Data.PropertyList.Binary.Float
                         Data.PropertyList.Binary.Get
                         Data.PropertyList.Binary.Put
                         Data.PropertyList.Binary.Types
@@ -36,10 +37,10 @@ Library
                         Data.PropertyList.KeyPath
                         Data.PropertyList.Xml.Algebra
   build-depends:        base >= 4 && <5,
+                        base64-bytestring,
                         bytestring,
                         cereal,
                         containers, 
-                        dataenc,
                         free >= 1.8,
                         transformers,
                         old-locale,

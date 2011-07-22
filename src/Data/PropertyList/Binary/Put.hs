@@ -95,8 +95,8 @@ putBPListRecord putRef (BPLReal       x)   = do
 putBPListRecord putRef (BPLInt        x)   = putInt x
 putBPListRecord putRef (BPLString     x)   = putString x
 putBPListRecord putRef (BPLUID        x)   = putUID x
-putBPListRecord putRef (BPLBool    True)   = putWord8 0x08
-putBPListRecord putRef (BPLBool   False)   = putWord8 0x09
+putBPListRecord putRef (BPLBool   False)   = putWord8 0x08
+putBPListRecord putRef (BPLBool    True)   = putWord8 0x09
 
 putMarkerWithPayload x payload = putWord8 ((x `shiftL` 4) .|. payload)
 putMarkerWithSize x sz
