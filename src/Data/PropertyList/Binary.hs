@@ -18,7 +18,7 @@ module Data.PropertyList.Binary
     ) where
 
 import Control.Applicative
-import Data.Binary.Put
+import Data.Serialize.Put
 import qualified Data.ByteString.Lazy as BL
 import Data.PropertyList.Types
 import Data.PropertyList.Binary.Algebra ({- instances -})
@@ -47,7 +47,7 @@ readBinaryPartialPropertyListFromFile file = do
     either fail return (readBinaryPartialPropertyList bs)
 
 encodeBinaryPropertyList :: PropertyList -> BL.ByteString
-encodeBinaryPropertyList = runPut . putBPList . linearize
+encodeBinaryPropertyList = runPutLazy . putBPList . linearize
 
 writeBinaryPropertyListToFile :: FilePath -> PropertyList -> IO ()
 writeBinaryPropertyListToFile path = 

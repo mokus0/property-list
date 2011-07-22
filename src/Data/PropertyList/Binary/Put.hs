@@ -1,14 +1,13 @@
 module Data.PropertyList.Binary.Put where
 
 import Control.Monad
-import Data.Binary.IEEE754
-import Data.Binary.Put
+import Data.Serialize.Put
 import Data.Bits
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC8
-import qualified Data.ByteString.Lazy as BL
 import Data.Char
 import Data.Foldable (toList)
+import Data.PropertyList.Binary.Float
 import Data.PropertyList.Binary.Types
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -18,8 +17,8 @@ import Data.Word
 
 withSize putThing = do
     let thing = runPut putThing
-    putLazyByteString thing
-    return $! (fromIntegral (BL.length thing) :: Word64)
+    putByteString thing
+    return $! (fromIntegral (BS.length thing) :: Word64)
 
 unsnoc []     = error "unsnoc: empty list"
 unsnoc [x]    = ([], x)
@@ -176,3 +175,5 @@ unsignedSz n = go 1 0xff
         go nBytes mask
             | n .&. mask == n   = nBytes
             | otherwise         = (go $! (nBytes + 1)) $! (shiftL mask 8 .|. mask)
+
+putFloat64be = putWord64be . doubleToWord64

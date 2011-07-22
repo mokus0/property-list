@@ -4,10 +4,10 @@ import Control.Applicative
 import Control.Monad
 import Data.Attoparsec.Lazy as Atto hiding (parseOnly)
 import Data.Attoparsec.Binary as Atto
-import Data.Binary.IEEE754
 import Data.Bits
 import qualified Data.ByteString.Char8 as BSC8
 import qualified Data.ByteString.Lazy as BL
+import Data.PropertyList.Binary.Float
 import Data.PropertyList.Binary.Types
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
@@ -15,7 +15,6 @@ import qualified Data.Text.Encoding as Text
 import Data.Time
 import qualified Data.Vector.Unboxed as V
 import Data.Word
-import GHC.Float
 
 -- TODO: attoparsec's error reporting leaves a LOT to be desired... figure out how to make it better,
 -- even if that means switching to something else (Parsec?).  Or just give up on nice error handling
@@ -106,13 +105,13 @@ bplInt = do
     return (interpretBPLInt sz i)
 bplFloat32 = do
     word8 0x22
-    float2Double . wordToFloat <$> anyWord32be
+    word32ToDouble <$> anyWord32be
 bplFloat64 = do
     word8 0x23
-    wordToDouble <$> anyWord64be
+    word64ToDouble <$> anyWord64be
 bplDate = do
     word8 0x33
-    interpretBPLDate . wordToDouble <$> anyWord64be
+    interpretBPLDate . word64ToDouble <$> anyWord64be
 bplData = do
     sz <- markerAndSize 0x4
     Atto.take sz
