@@ -12,7 +12,7 @@ module Data.PropertyList.Binary.Float
 import Foreign
 import GHC.Float
 
--- TODO: create a library or extend an existing on to include a module Data.Float.IEEE
+-- TODO: create a library or extend an existing one to include a module Data.Float.IEEE
 -- which exports types Float32, Float64, etc., with proper IEEE-safe conversions
 -- and C union-style conversions to corresponding Word types...
 
