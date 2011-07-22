@@ -29,15 +29,13 @@ Library
   other-modules:        Data.PropertyList.Types
                         Data.PropertyList.Binary.Algebra
                         Data.PropertyList.Binary.Linearize
-                        Data.PropertyList.Binary.Parse
+                        Data.PropertyList.Binary.Get
                         Data.PropertyList.Binary.Put
                         Data.PropertyList.Binary.Types
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.KeyPath
                         Data.PropertyList.Xml.Algebra
   build-depends:        base >= 4 && <5,
-                        attoparsec,
-                        attoparsec-binary,
                         bytestring,
                         cereal,
                         containers, 

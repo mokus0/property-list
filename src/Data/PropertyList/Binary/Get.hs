@@ -1,14 +1,13 @@
-module Data.PropertyList.Binary.Parse where
+module Data.PropertyList.Binary.Get where
 
 import Control.Applicative
 import Control.Monad
-import Data.Attoparsec.Lazy as Atto hiding (parseOnly)
-import Data.Attoparsec.Binary as Atto
 import Data.Bits
 import qualified Data.ByteString.Char8 as BSC8
 import qualified Data.ByteString.Lazy as BL
 import Data.PropertyList.Binary.Float
 import Data.PropertyList.Binary.Types
+import Data.Serialize.Get
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
@@ -16,20 +15,14 @@ import Data.Time
 import qualified Data.Vector.Unboxed as V
 import Data.Word
 
--- TODO: attoparsec's error reporting leaves a LOT to be desired... figure out how to make it better,
--- even if that means switching to something else (Parsec?).  Or just give up on nice error handling
--- and use binary?
-
-parseOnly p = eitherResult . parse p
-
 rawBPList bs = do
     let headerBS = BL.take 8 bs
-    header@(BPListHeader version) <- parseOnly bplistHeader headerBS
+    header@(BPListHeader version) <- runGetLazy bplistHeader headerBS
     when (version .&. 0xff00 /= 0x3000) $
         Left "Unsupported bplist version"
     
     let trailerBS = BL.drop (BL.length bs - bplistTrailerBytes) bs
-    trailer <- parseOnly bplistTrailer trailerBS
+    trailer <- runGetLazy bplistTrailer trailerBS
     
     --TODO: sanity checks
     let nOffsets :: Num a => a
@@ -39,7 +32,7 @@ rawBPList bs = do
             = BL.take (nOffsets * fromIntegral bytesPerOffset)
             . BL.drop (fromIntegral (offsetTableOffset trailer))
             $ bs
-    offsets <- parseOnly (replicateM nOffsets (sizedInt bytesPerOffset)) offsetsBS
+    offsets <- runGetLazy (replicateM nOffsets (sizedInt bytesPerOffset)) offsetsBS
     
     return (RawBPList bs header (V.fromList offsets) trailer)
 
@@ -54,30 +47,36 @@ readBPListRecords bs = do
 
 getBPListRecord (RawBPList bs _hdr offsets tlr) objNum
     | objNum >= 0 && fromIntegral objNum < V.length offsets
-    = parseOnly (bplistRecord objRef) (BL.drop (fromIntegral (offsets V.! fromIntegral objNum)) bs)
+    = runGetLazy (bplistRecord objRef) (BL.drop (fromIntegral (offsets V.! fromIntegral objNum)) bs)
     
     | otherwise = Left "getBPListRecord: index out of range"
     where
         objRef = sizedInt (fromIntegral (objectRefSize tlr))
 
+asciiString str = do
+    let bs = BSC8.pack str
+    bs' <- getByteString (BSC8.length bs)
+    if (bs == bs') 
+        then return ()
+        else fail ("Expecting " ++ show str)
+
 bplistHeaderBytes = 8
 bplistHeader = do
-    string (BSC8.pack "bplist")
-    BPListHeader <$> anyWord16be
-    <?> "bplist header"
+    asciiString "bplist"
+    BPListHeader <$> getWord16be
 
 bplistTrailerBytes = 32
 bplistTrailer =
     const BPListTrailer
-        <$> Atto.take 5     -- _unused
-        <*> anyWord8        -- sortVersion
-        <*> anyWord8        -- offsetIntSize
-        <*> anyWord8        -- objectRefSize
-        <*> anyWord64be     -- numObjects
-        <*> anyWord64be     -- topObject
-        <*> anyWord64be     -- offsetTableOffset
+        <$> skip 5          -- _unused
+        <*> getWord8        -- sortVersion
+        <*> getWord8        -- offsetIntSize
+        <*> getWord8        -- objectRefSize
+        <*> getWord64be     -- numObjects
+        <*> getWord64be     -- topObject
+        <*> getWord64be     -- offsetTableOffset
 
-bplistRecord ref = choice
+bplistRecord ref = msum
     [ const BPLNull     <$> bplNull
     , BPLBool           <$> bplTrue
     , BPLBool           <$> bplFalse
@@ -95,6 +94,12 @@ bplistRecord ref = choice
     , uncurry BPLDict   <$> bplDict ref
     ]
 
+word8 b = do
+    b' <- getWord8
+    if b == b'
+        then return b
+        else fail ("expecting " ++ show b)
+
 bplNull  = word8 0x00
 bplTrue  = word8 0x08 >> return True
 bplFalse = word8 0x09 >> return False
@@ -105,22 +110,22 @@ bplInt = do
     return (interpretBPLInt sz i)
 bplFloat32 = do
     word8 0x22
-    word32ToDouble <$> anyWord32be
+    word32ToDouble <$> getWord32be
 bplFloat64 = do
     word8 0x23
-    word64ToDouble <$> anyWord64be
+    word64ToDouble <$> getWord64be
 bplDate = do
     word8 0x33
-    interpretBPLDate . word64ToDouble <$> anyWord64be
+    interpretBPLDate . word64ToDouble <$> getWord64be
 bplData = do
     sz <- markerAndSize 0x4
-    Atto.take sz
+    getByteString sz
 bplASCII = do
     sz <- markerAndSize 0x5
-    BSC8.unpack <$> Atto.take sz
+    BSC8.unpack <$> getByteString sz
 bplUTF16 = do
     sz <- markerAndSize 0x6
-    Text.unpack . Text.decodeUtf16BE <$> Atto.take (2*sz)
+    Text.unpack . Text.decodeUtf16BE <$> getByteString (2*sz)
 bplUID = do
     sz <- fmap (1+) (halfByte 0x8)
     sizedInt (fromIntegral sz)
@@ -137,8 +142,10 @@ bplDict ref = do
     return (ks, vs)
 
 halfByte x = do
-    marker <- satisfy $ \x' -> x' `shiftR` 4 == x
-    return (marker .&. 0x0f)
+    marker <- getWord8
+    if marker `shiftR` 4 == x
+        then return (marker .&. 0x0f)
+        else fail ("expecting marker " ++ show x)
 markerAndSize x = do
     marker <- halfByte x
     case marker of
@@ -147,12 +154,12 @@ markerAndSize x = do
             sizedInt intSz
         _   -> return (fromIntegral marker)
 
-sizedInt :: (Integral i, Bits i) => Word -> Parser i
+sizedInt :: (Integral i, Bits i) => Word -> Get i
 sizedInt 0 = return 0
-sizedInt 1 = fromIntegral <$> anyWord8
-sizedInt 2 = fromIntegral <$> anyWord16be
-sizedInt 4 = fromIntegral <$> anyWord32be
-sizedInt 8 = fromIntegral <$> anyWord64be
+sizedInt 1 = fromIntegral <$> getWord8
+sizedInt 2 = fromIntegral <$> getWord16be
+sizedInt 4 = fromIntegral <$> getWord32be
+sizedInt 8 = fromIntegral <$> getWord64be
 sizedInt n
     | n < 0     = fail ("sizedInt: negative size: " ++ show n)
     | otherwise = do

@@ -23,7 +23,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.PropertyList.Types
 import Data.PropertyList.Binary.Algebra ({- instances -})
 import Data.PropertyList.Binary.Linearize
-import Data.PropertyList.Binary.Parse
+import Data.PropertyList.Binary.Get
 import Data.PropertyList.Binary.Put
 import Data.PropertyList.Binary.Types
 
