@@ -51,21 +51,27 @@ $( do
     return []
  )
  
+{- NOINLINE doubleToWord64 -}
 doubleToWord64 :: Double -> Word64
 doubleToWord64 = unsafeConvertStorable
 
+{- NOINLINE word64ToDouble -}
 word64ToDouble :: Word64 -> Double
 word64ToDouble = unsafeConvertStorable
 
+{- NOINLINE word32ToDouble -}
 word32ToDouble :: Word32 -> Double
 word32ToDouble = float2Double . word32ToFloat
 
+{- NOINLINE floatToWord32 -}
 floatToWord32 :: Float -> Word32
 floatToWord32 = unsafeConvertStorable
 
+{- NOINLINE word32ToFloat -}
 word32ToFloat :: Word32 -> Float
 word32ToFloat = unsafeConvertStorable
 
+{-# INLINE unsafeConvertStorable #-}
 unsafeConvertStorable :: (Storable a, Storable b) => a -> b
 unsafeConvertStorable x = unsafePerformIO $ 
     alloca $ \p -> do

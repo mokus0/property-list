@@ -110,10 +110,10 @@ bplInt = do
     return (interpretBPLInt sz i)
 bplFloat32 = do
     word8 0x22
-    word32ToDouble <$> getWord32be
+    getFloat32be
 bplFloat64 = do
     word8 0x23
-    word64ToDouble <$> getWord64be
+    getFloat64be
 bplDate = do
     word8 0x33
     interpretBPLDate . word64ToDouble <$> getWord64be
@@ -197,3 +197,13 @@ interpretBPLDate :: Double -> UTCTime
 interpretBPLDate sec = addUTCTime (realToFrac sec) epoch
     where
         epoch = UTCTime (fromGregorian 2001 1 1) 0
+
+getFloat32be :: Get Double
+getFloat32be = do
+    d <- getWord32be
+    return (word32ToDouble d)
+
+getFloat64be :: Get Double
+getFloat64be = do
+    d <- getWord64be
+    return (word64ToDouble d)
