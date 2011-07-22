@@ -2,10 +2,11 @@
 module Data.PropertyList.Binary.Float
     ( doubleToWord64
     , word64ToDouble
-    , word32ToDouble
-
+    
     , floatToWord32
     , word32ToFloat
+    
+    , doubleToEquivalentFloat
     ) where
 
 import Foreign
@@ -59,10 +60,6 @@ doubleToWord64 = unsafeConvertStorable
 word64ToDouble :: Word64 -> Double
 word64ToDouble = unsafeConvertStorable
 
-{- NOINLINE word32ToDouble -}
-word32ToDouble :: Word32 -> Double
-word32ToDouble = float2Double . word32ToFloat
-
 {- NOINLINE floatToWord32 -}
 floatToWord32 :: Float -> Word32
 floatToWord32 = unsafeConvertStorable
@@ -75,6 +72,15 @@ word32ToFloat = unsafeConvertStorable
 unsafeConvertStorable :: (Storable a, Storable b) => a -> b
 unsafeConvertStorable x = unsafePerformIO $ 
     alloca $ \p -> do
-        poke p x
-        peek (castPtr p)
+        poke (castPtr p) x
+        peek p
 
+doubleToEquivalentFloat :: Double -> Maybe Float
+doubleToEquivalentFloat d
+    -- just check strict equality; if d is NaN, don't convert it
+    -- (in case the NaN has an important payload)
+    | d == d'   = Just f
+    | otherwise = Nothing
+    where
+        f  = double2Float d
+        d' = float2Double f

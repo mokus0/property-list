@@ -14,6 +14,7 @@ import qualified Data.Text.Encoding as Text
 import Data.Time
 import qualified Data.Vector.Unboxed as V
 import Data.Word
+import GHC.Float
 
 rawBPList bs = do
     let headerBS = BL.take 8 bs
@@ -110,7 +111,7 @@ bplInt = do
     return (interpretBPLInt sz i)
 bplFloat32 = do
     word8 0x22
-    getFloat32be
+    float2Double <$> getFloat32be
 bplFloat64 = do
     word8 0x23
     getFloat64be
@@ -198,12 +199,12 @@ interpretBPLDate sec = addUTCTime (realToFrac sec) epoch
     where
         epoch = UTCTime (fromGregorian 2001 1 1) 0
 
-getFloat32be :: Get Double
+getFloat32be :: Get Float
 getFloat32be = do
     d <- getWord32be
-    return (word32ToDouble d)
+    return $! word32ToFloat d
 
 getFloat64be :: Get Double
 getFloat64be = do
     d <- getWord64be
-    return (word64ToDouble d)
+    return $! word64ToDouble d

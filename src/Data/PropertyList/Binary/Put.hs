@@ -85,9 +85,13 @@ putBPListRecord putRef (BPLDict   ks vs)
         mapM_ putRef vs
     where nks = length ks; nvs = length vs
 putBPListRecord putRef (BPLReal       x)   = do
-    -- TODO: detect when conversion to Float would not lose data
-    putWord8 0x23
-    putFloat64be x
+    case doubleToEquivalentFloat x of
+        Just f -> do
+            putWord8 0x22
+            putFloat32be f
+        Nothing -> do
+            putWord8 0x23
+            putFloat64be x
 putBPListRecord putRef (BPLInt        x)   = putInt x
 putBPListRecord putRef (BPLString     x)   = putString x
 putBPListRecord putRef (BPLUID        x)   = putUID x
@@ -176,4 +180,5 @@ unsignedSz n = go 1 0xff
             | n .&. mask == n   = nBytes
             | otherwise         = (go $! (nBytes + 1)) $! (shiftL mask 8 .|. mask)
 
-putFloat64be = putWord64be . doubleToWord64
+putFloat32be x = putWord32be $! floatToWord32  x
+putFloat64be x = putWord64be $! doubleToWord64 x
