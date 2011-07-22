@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ViewPatterns #-}
 module Data.PropertyList.Xml
     ( UnparsedXmlPlistItem(..)
     , unparsedXmlPlistItemToElement
@@ -23,14 +22,19 @@ import Text.XML.Light
 -- unparseable elements in the tree.
 readXmlPartialPropertyList :: String -> Either String (PartialPropertyList UnparsedXmlPlistItem)
 readXmlPartialPropertyList str = case parseXMLDoc str of
-    Just (Element (QName "plist" _ _) attrs (onlyElems -> [root]) _)
-        | all isCompatibleVersionAttr attrs
-            -> Right (toPlist root)
+    Just e@(Element (QName "plist" _ _) _ content _) ->
+        if plistVersion e == "1.0"
+            then case onlyElems content of
+                [root]  -> Right (toPlist root)
+                _       -> Left "plist element must have exactly one child element"
+            else Left "plist version is not supported"
     Just e  -> Right (toPlist e)
     Nothing -> Left "not an XML document"
     where
-        isCompatibleVersionAttr (Attr (QName "version" _ _) "1.0") = True
-        isCompatibleVersionAttr _ = False
+        plistVersion = maybe "1.0" id . findAttrBy isVersion
+        
+        isVersion (QName "version" _ _) = True
+        isVersion _ = False
 
 -- |Read a property list from a 'String' in the xml1 format.  If parsing
 -- fails, returns a description of the problem in the 'Left' result.

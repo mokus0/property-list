@@ -1,6 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE ViewPatterns #-}
 module Data.PropertyList.Xml.Algebra
     ( UnparsedXmlPlistItem(..)
     , unparsedXmlPlistItemToElement
@@ -73,20 +72,24 @@ instance PListCoalgebra (Either UnparsedXmlPlistItem) Element where
             coalg (Element (QName name _ _) [] content _) = fromElem name content
             coalg _ = reject UnparsedXml e
             
-            fromElem "array" (onlyElems -> content)
-                = accept PLArray content
-            fromElem "data" (B64.decode . text -> Just xs)  
-                = accept (PLData . BS.pack) xs
-            fromElem "date" (text -> contents)
-                = case parseTime defaultTimeLocale dateFormat contents of
-                    Nothing -> reject UnparsedDate contents
-                    Just x  -> accept PLDate x
+            fromElem "array" content
+                = accept PLArray (onlyElems content)
+            fromElem "data" content
+                = let contentText = text content
+                   in case B64.decode contentText of
+                        Just xs -> accept (PLData . BS.pack) xs
+                        Nothing -> reject UnparsedData contentText
+            fromElem "date" content
+                = let contentText = text content
+                   in case parseTime defaultTimeLocale dateFormat contentText of
+                        Nothing -> reject UnparsedDate contentText
+                        Just x  -> accept PLDate x
             fromElem "dict" content
                 = fmap (PLDict . M.fromList) (fromDict (onlyElems content))
-            fromElem "real" (text -> x)
-                = tryRead PLReal UnparsedReal x
-            fromElem "integer" (text -> x)
-                = tryRead PLInt UnparsedInt x
+            fromElem "real" content
+                = tryRead PLReal UnparsedReal (text content)
+            fromElem "integer" content
+                = tryRead PLInt UnparsedInt (text content)
             fromElem "string" content
                 = accept PLString (text content)
             fromElem "true"  [] = accept PLBool True
