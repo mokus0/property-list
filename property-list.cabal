@@ -14,6 +14,8 @@ category:               Data, Parsing, XML
 synopsis:               XML property list parser
 description:            Parser, data type and formatter for Apple's XML property list 1.0 format.
 
+tested-with:            GHC == 6.12.3, GHC == 7.0.4
+
 source-repository head
   type:                 git
   location:             git://github.com/mokus0/property-list.git
@@ -36,7 +38,7 @@ Library
                         Data.PropertyList.PropertyListItem
                         Data.PropertyList.KeyPath
                         Data.PropertyList.Xml.Algebra
-  build-depends:        base >= 4 && <5,
+  build-depends:        base >= 3 && <5,
                         base64-bytestring,
                         bytestring,
                         cereal,

@@ -2,6 +2,7 @@ module Data.PropertyList.Binary.Get where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Trans.Error ({- instance Monad (Either a) -})
 import Data.Bits
 import qualified Data.ByteString.Char8 as BSC8
 import qualified Data.ByteString.Lazy as BL
