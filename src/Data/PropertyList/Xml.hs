@@ -23,11 +23,12 @@ import Text.XML.Light
 readXmlPartialPropertyList :: String -> Either String (PartialPropertyList UnparsedXmlPlistItem)
 readXmlPartialPropertyList str = case parseXMLDoc str of
     Just e@(Element (QName "plist" _ _) _ content _) ->
-        if plistVersion e == "1.0"
-            then case onlyElems content of
-                [root]  -> Right (toPlist root)
-                _       -> Left "plist element must have exactly one child element"
-            else Left "plist version is not supported"
+        let v = plistVersion e
+         in if v == "1.0"
+                then case onlyElems content of
+                    [root]  -> Right (toPlist root)
+                    _       -> Left "plist element must have exactly one child element"
+                else Left ("plist version " ++ show v ++ " is not supported")
     Just e  -> Right (toPlist e)
     Nothing -> Left "not an XML document"
     where
@@ -48,8 +49,12 @@ readXmlPropertyList str
 -- initial propertylist type  (which includes 'PropertyList', @'PartialPropertyList'
 -- 'UnparsedPlistItem'@, and @'PartialPropertyList' 'PlistItem'@).
 showXmlPropertyList :: (InitialPList f pl, PListAlgebra f Element) => pl -> String
-showXmlPropertyList = ppTopElement . fromPlist
-
+showXmlPropertyList = ppTopElement . plist1element . fromPlist
+    where
+        version1attr = Attr (unqual "version") "1.0"
+        plist1element :: Element -> Element
+        plist1element root = unode "plist" (version1attr, root)
+    
 
 -- * Reading and writing XML 'PartialPropertyList's and 'PropertyList's from files
 
