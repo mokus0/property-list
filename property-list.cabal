@@ -1,5 +1,5 @@
 name:                   property-list
-version:                0.1.0.1
+version:                0.1.0.2
 stability:              experimental
 license:                PublicDomain
 
@@ -11,7 +11,7 @@ maintainer:             James Cook <james.cook@usma.edu>
 homepage:               http://code.haskell.org/~mokus/property-list
 
 category:               Data, Parsing, XML
-synopsis:               XML property list parser
+synopsis:               Apple property list parser
 description:            Parser, data type and formatter for Apple XML and binary property lists.
 
 tested-with:            GHC == 6.12.3, GHC == 7.0.4
