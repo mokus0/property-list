@@ -1,8 +1,3 @@
-Try other binary serialization systems instead of binary+attoparsec:
-
-    - cereal
-    - parsec?
-
 The overall design of the "algebra" system is probably a pretty severe abuse of type classes.  At some point I would like to revisit the design and see how it looks without type classes.  Maybe even go to the trouble to shoehorn it into the recursion-schemes types, though the use of type families for Base means that not all my instances could be made to fit (ie, "instance PListAlgebra f a" would map to "instance Foldable a, type instance Base a = Compose f PropertyListS" or somesuch thing - each 'a' only can have one 'Base').  Strictly speaking that is more correct, so maybe it would ultimately lead to something simpler.  But the automatic 'forgetting' of some of the f-structures is very nice (mostly for enabling the use of the automatic constructors and deconstructors, which could be done other ways).
 
 More complete test suite (including some basic performance tests - performance isn't a major goal, but it would be nice to know if I totally destroy it).
