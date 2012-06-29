@@ -6,9 +6,9 @@ license:                PublicDomain
 cabal-version:          >= 1.6
 build-type:             Simple
 
-author:                 James Cook <james.cook@usma.edu>
-maintainer:             James Cook <james.cook@usma.edu>
-homepage:               http://code.haskell.org/~mokus/property-list
+author:                 James Cook <mokus@deepbondi.net>
+maintainer:             James Cook <mokus@deepbondi.net>
+homepage:               https://github.com/mokus0/property-list
 
 category:               Data, Parsing, XML
 synopsis:               Apple property list parser
