@@ -1,7 +1,8 @@
 {-# LANGUAGE 
     MultiParamTypeClasses,
     FlexibleContexts, FlexibleInstances,
-    GeneralizedNewtypeDeriving, TypeFamilies
+    GeneralizedNewtypeDeriving, TypeFamilies,
+    DeriveTraversable
   #-}
 
 -- |This module implements the 'PropertyList' and 'PartialPropertyList' types
