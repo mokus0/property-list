@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, CPP #-}
 module Data.PropertyList.Binary.Float
     ( doubleToWord64
     , word64ToDouble
@@ -11,7 +11,9 @@ module Data.PropertyList.Binary.Float
 
 import Foreign
 import GHC.Float
+#if MIN_VERSION_base(4,7,0)
 import System.IO.Unsafe (unsafePerformIO)
+#endif
 
 -- TODO: create a library or extend an existing one to include a module Data.Float.IEEE
 -- which exports types Float32, Float64, etc., with proper IEEE-safe conversions
