@@ -45,12 +45,12 @@ Library
                         containers, 
                         free >= 1.8,
                         transformers,
-                        old-locale,
                         oneOfN,
                         recursion-schemes >= 1.8,
                         syb,
                         template-haskell,
                         text,
                         time,
+                        time-locale-compat,
                         vector,
                         xml >= 1.3.9

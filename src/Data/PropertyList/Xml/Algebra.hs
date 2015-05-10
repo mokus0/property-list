@@ -13,7 +13,7 @@ import Data.Functor.Identity
 import qualified Data.Map as M
 import Data.PropertyList.Algebra
 import Data.Time
-import System.Locale
+import Data.Time.Locale.Compat
 import Text.XML.Light
 
 -- "%FT%T%QZ" would be better, but apple's plist parser
